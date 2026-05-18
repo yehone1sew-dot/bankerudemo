@@ -421,4 +421,53 @@ function nextTurn(room, roomId) {
 
 // ── Start Server ──────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Bankeru running at http://localhost:${PORT}`));
+server.listen(PORT, () => {
+  console.log('\x1b[32m%s\x1b[0m', `🟢 Bankeru Web Server running at http://localhost:${PORT}`);
+  
+  // ── Spawn Telegram Bot (if enabled) ──
+  const startBot = process.env.START_BOT !== 'false';
+  if (startBot) {
+    const { spawn } = require('child_process');
+    
+    const botProcess = spawn('node', ['index.js'], {
+      cwd: path.join(__dirname, 'bankeru_tg_bot'),
+      env: process.env
+    });
+    
+    const logWithPrefix = (prefix, colorCode, data) => {
+      const message = data.toString().trim();
+      if (!message) return;
+      message.split('\n').forEach(line => {
+        console.log(`${colorCode}${prefix}\x1b[0m ${line}`);
+      });
+    };
+    
+    botProcess.stdout.on('data', (data) => {
+      logWithPrefix('[Bot]', '\x1b[35m', data); // Magenta
+    });
+    
+    botProcess.stderr.on('data', (data) => {
+      logWithPrefix('[Bot Error]', '\x1b[31m', data); // Red
+    });
+    
+    botProcess.on('close', (code) => {
+      console.log(`\x1b[33m[Bot] Process exited with code ${code}\x1b[0m`);
+    });
+    
+    // Clean up child process on server termination
+    const cleanup = () => {
+      try { botProcess.kill('SIGINT'); } catch (e) {}
+    };
+    
+    process.on('SIGINT', () => {
+      cleanup();
+      process.exit(0);
+    });
+    process.on('SIGTERM', () => {
+      cleanup();
+      process.exit(0);
+    });
+  } else {
+    console.log('\x1b[33m%s\x1b[0m', 'ℹ️ Telegram Bot startup is disabled (START_BOT=false).');
+  }
+});
