@@ -15,6 +15,26 @@ if (!token || token === 'YOUR_TOKEN_HERE') {
 // Create a bot that uses 'polling' to fetch new updates
 const bot = new TelegramBot(token, { polling: true });
 
+// Self-healing conflict detector: Automatically stop local polling if production bot is active
+bot.on('polling_error', (error) => {
+  if (error.code === 'ETELEGRAM' && error.message.includes('409 Conflict')) {
+    console.warn('\n\x1b[33m%s\x1b[0m', '⚠️ Telegram Bot polling conflict detected!');
+    console.warn('\x1b[33m%s\x1b[0m', '  -> Your production bot (or another instance) is already running.');
+    console.warn('\x1b[33m%s\x1b[0m', '  -> To avoid interfering with it, this local bot instance is stopping polling.');
+    console.warn('\x1b[33m%s\x1b[0m', '  -> TIP: To test locally, set a separate test token in your bankeru_tg_bot/.env file.\n');
+    
+    bot.stopPolling()
+      .then(() => {
+        console.log('\x1b[32m%s\x1b[0m', 'ℹ️ Local bot polling stopped gracefully. Web server remains active.');
+      })
+      .catch((err) => {
+        console.error('Error stopping bot polling:', err);
+      });
+  } else {
+    console.error('Telegram Bot Polling Error:', error.message);
+  }
+});
+
 console.log('Bankeru Telegram Bot is running...');
 
 // Handle the /start command

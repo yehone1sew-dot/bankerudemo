@@ -32,23 +32,30 @@ serverProcess.on('close', (code) => {
   cleanup();
 });
 
-// 2. Spawn Telegram Bot
-const botProcess = spawn('node', ['index.js'], {
-  cwd: path.join(__dirname, 'bankeru_tg_bot'),
-  env: process.env
-});
+// 2. Spawn Telegram Bot (if enabled)
+const startBot = process.env.START_BOT !== 'false';
+let botProcess = null;
 
-botProcess.stdout.on('data', (data) => {
-  logWithPrefix('[Bot]', '\x1b[35m', data); // Magenta
-});
+if (startBot) {
+  botProcess = spawn('node', ['index.js'], {
+    cwd: path.join(__dirname, 'bankeru_tg_bot'),
+    env: process.env
+  });
 
-botProcess.stderr.on('data', (data) => {
-  logWithPrefix('[Bot Error]', '\x1b[31m', data); // Red
-});
+  botProcess.stdout.on('data', (data) => {
+    logWithPrefix('[Bot]', '\x1b[35m', data); // Magenta
+  });
 
-botProcess.on('close', (code) => {
-  console.log(`\x1b[33m[Bot] Process exited with code ${code}\x1b[0m`);
-});
+  botProcess.stderr.on('data', (data) => {
+    logWithPrefix('[Bot Error]', '\x1b[31m', data); // Red
+  });
+
+  botProcess.on('close', (code) => {
+    console.log(`\x1b[33m[Bot] Process exited with code ${code}\x1b[0m`);
+  });
+} else {
+  console.log('\x1b[33m%s\x1b[0m', 'ℹ️ Telegram Bot startup is disabled (START_BOT=false).');
+}
 
 // Cleanup sub-processes on termination
 let isCleaningUp = false;
@@ -62,7 +69,7 @@ function cleanup() {
   } catch (e) {}
   
   try {
-    botProcess.kill('SIGINT');
+    if (botProcess) botProcess.kill('SIGINT');
   } catch (e) {}
   
   setTimeout(() => {
