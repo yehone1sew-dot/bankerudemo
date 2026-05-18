@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ባንከሩ</title>
+  <meta name="description"
+    content="Play Bankeru, the electrifying In-Between card game. Multiplayer rooms or demo vs the computer. Place your bets!" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="locales.js"></script>
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+     LOBBY SCREEN
+══════════════════════════════════════════════════════════════════ -->
+  <div id="lobby" class="screen active">
+    <div class="lang-switcher">
+      <select id="langSelect">
+        <option value="en">English</option>
+        <option value="am">አማርኛ</option>
+      </select>
+    </div>
+    <div class="lobby-bg">
+      <div class="bg-card c1">♠</div>
+      <div class="bg-card c2">♥</div>
+      <div class="bg-card c3">♦</div>
+      <div class="bg-card c4">♣</div>
+    </div>
+
+    <div class="lobby-content">
+      <div class="logo">
+        <div class="logo-icon">🃏</div>
+        <h1 data-i18n="lobby_title">ባንከሩ</h1>
+        <p class="tagline" data-i18n="lobby_tagline">ፈታ ብለው ብሮትን ይቁጠሩ !</p>
+      </div>
+
+      <div class="lobby-card glass">
+        <div class="name-row">
+          <label for="playerName" data-i18n="name_label">ስም</label>
+          <input id="playerName" type="text" data-i18n-placeholder="name_placeholder" placeholder="Enter your name…"
+            maxlength="16" autocomplete="off" />
+        </div>
+        <div class="name-row">
+          <label for="startChips" data-i18n="start_chips_label">መነሻ መደብ</label>
+          <input id="startChips" type="number" value="100" min="100" max="10000" step="50" />
+        </div>
+
+        <button id="btnDemo" class="btn btn-demo">
+          <span class="btn-icon">🤖</span>
+          <span data-i18n="btn_demo">የሙከራ ጨዋታ</span>
+        </button>
+
+        <div class="divider" data-i18n="divider">ከሌሎች ሰዎች ጋር ይጫወቱ</div>
+
+        <button id="btnCreate" class="btn btn-create">
+          <span class="btn-icon">🏠</span>
+          <span data-i18n="btn_create">አዲስ የጨዋታ ቦታ ፍጠር</span>
+        </button>
+
+        <div class="join-row">
+          <input id="joinCode" type="text" data-i18n-placeholder="join_code_placeholder" placeholder="የመጫወቻ ቦታ ኮድ"
+            maxlength="55" class="join-input" />
+          <button id="btnJoin" class="btn btn-join">
+            <span data-i18n="btn_join">ነባር ጨዋታ ተቀላቀል</span>
+          </button>
+        </div>
+
+        <div id="lobbyError" class="error-msg hidden"></div>
+      </div>
+
+      <p class="rules-hint" data-i18n="rules_hint">
+        የመጀመሪያዎቹን ሁለት ካርታዎች ይመልከቱ → ሦስተኛዋ ካርታ በመካከላቸው ከሆነች ያሸንፋሉ！
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+     WAITING ROOM SCREEN
+══════════════════════════════════════════════════════════════════ -->
+  <div id="waiting" class="screen">
+    <div class="waiting-content glass">
+      <h2 data-i18n="waiting_title">የመጠበቂያ ቦታ</h2>
+      <div class="room-code-display">
+        <span data-i18n="waiting_room_code">የመጫወቻ ቦታ ኮድ: </span><span id="roomCodeDisplay"></span>
+        <button id="btnCopyCode" class="btn-icon-sm" title="Copy code">📋</button>
+      </div>
+      <p class="waiting-sub" data-i18n="waiting_sub">እስከ 6 ተጫዋቾች ድረስ ሊጫወቱ ይችላሉ</p>
+      <div id="waitingPlayers" class="waiting-players"></div>
+      <div id="hostControls" class="hidden">
+        <div class="ante-row">
+          <label data-i18n="host_ante_label">የውርርድ መጠን:</label>
+          <input id="anteInput" type="number" value="10" min="1" max="100" />
+        </div>
+        <button id="btnStartGame" class="btn btn-create" style="margin-top:12px;" data-i18n="btn_start_game">
+          🚀 ጨዋታውን ጀምር
+        </button>
+      </div>
+      <button id="btnLeaveWaiting" class="btn btn-outline" style="margin-top:12px;" data-i18n="btn_leave">ውጣ</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+     GAME SCREEN
+══════════════════════════════════════════════════════════════════ -->
+  <div id="game" class="screen">
+
+    <!-- Header -->
+    <header class="game-header">
+      <div class="header-left">
+        <span class="header-logo">🃏 <span data-i18n="lobby_title">ባንከሩ</span></span>
+        <span id="headerRoomCode" class="room-badge"></span>
+      </div>
+      <div class="pot-display">
+        <span class="pot-label" data-i18n="pot_label">ካዝና</span>
+        <span id="potAmount" class="pot-value">0</span>
+      </div>
+      <div class="header-right">
+        <span id="myChipsDisplay" class="chips-badge">💰 0</span>
+        <button id="btnLeaveGame" class="btn-outline-sm" data-i18n="btn_leave_game">✕ ውጣ</button>
+      </div>
+    </header>
+
+    <!-- Main Table -->
+    <main class="table-area">
+      <!-- Players sidebar -->
+      <aside class="players-panel">
+        <h3 class="panel-title" data-i18n="players_panel_title">ተጫዋቾች</h3>
+        <div id="playersList" class="players-list"></div>
+      </aside>
+
+      <!-- Center game area -->
+      <section class="game-center">
+        <!-- Status banner -->
+        <div id="statusBanner" class="status-banner"></div>
+
+        <!-- Table felt -->
+        <div class="felt-table">
+          <!-- Cards area -->
+          <div class="cards-area">
+            <div id="card1Slot" class="card-slot">
+              <div class="slot-label" data-i18n="label_boundary">Boundary</div>
+              <div class="card-placeholder">?</div>
+            </div>
+            <!-- <div class="vs-badge">በመካከላቸው</div> -->
+            <div id="card3Slot" class="card-slot card3-slot">
+              <div class="slot-label" data-i18n="label_drawn">Drawn Card</div>
+              <div class="card-placeholder">?</div>
+            </div>
+            <!-- <div class="vs-badge">እና</div> -->
+            <div id="card2Slot" class="card-slot">
+              <div class="slot-label" data-i18n="label_boundary">Boundary</div>
+              <div class="card-placeholder">?</div>
+            </div>
+          </div>
+
+          <!-- Result overlay -->
+          <div id="resultOverlay" class="result-overlay hidden">
+            <div id="resultText" class="result-text"></div>
+            <div id="resultSub" class="result-sub"></div>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div id="controls" class="controls-panel">
+          <!-- Ante Phase -->
+          <div id="anteControls" class="control-group hidden">
+            <p class="control-hint" data-i18n="ante_hint">ጨዋታውን ለመቀላቀል ውርርድዎትን ያስገቡ</p>
+            <button id="btnAnte" class="btn btn-ante" data-i18n="btn_ante">
+              💰 ጀምር!
+            </button>
+          </div>
+
+          <!-- Bet Phase -->
+          <div id="betControls" class="control-group hidden">
+            <p class="control-hint" data-i18n="bet_hint">ውርርድዎን የሚያስገቡበት ጊዜ ነው!</p>
+            <div class="bet-area">
+              <div class="slider-row">
+                <span class="bet-label"><span data-i18n="bet_label">ይወራረዱ: </span><strong
+                    id="betDisplay">0</strong></span>
+                <button id="btnHalfPot" class="chip-btn" data-i18n="btn_half_pot">ግማሽ</button>
+                <button id="btnFullPot" class="chip-btn" data-i18n="btn_full_pot">ሙሉ</button>
+              </div>
+              <input id="betSlider" type="range" min="0" max="100" value="0" class="bet-slider" />
+              <div class="bet-buttons">
+                <button id="btnPass" class="btn btn-outline" data-i18n="btn_pass">↩️ ይለፈኝ</button>
+                <button id="btnBet" class="btn btn-bet" data-i18n="btn_bet">🎯 ተጫወት</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Waiting for other player -->
+          <div id="waitingControls" class="control-group">
+            <div class="waiting-indicator">
+              <div class="pulse-dot"></div>
+              <span id="waitingText" data-i18n="waiting_text">ይጠብቁ…</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chat / Log -->
+      <aside class="log-panel">
+        <h3 class="panel-title" data-i18n="log_panel_title">የጨዋታ መዝገብ</h3>
+        <div id="gameLog" class="game-log"></div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+     GAME OVER SCREEN
+══════════════════════════════════════════════════════════════════ -->
+  <div id="gameover" class="screen">
+    <div class="gameover-content glass">
+      <div class="trophy">🏆</div>
+      <h2 id="gameoverTitle" data-i18n="gameover_title">ጨዋታው አልቋል!</h2>
+      <p id="gameoverSub" data-i18n="gameover_sub"></p>
+      <div id="finalScores" class="final-scores"></div>
+      <button id="btnPlayAgain" class="btn btn-create" style="margin-top:20px;" data-i18n="btn_play_again">
+        🔄 በድጋሜ ይጫወቱ
+      </button>
+      <button id="btnBackLobby" class="btn btn-outline" style="margin-top:10px;" data-i18n="btn_back_lobby">
+        🏠 ወደ መጀመሪያው ይመለሱ
+      </button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="game.js"></script>
+</body>
+
+</html>

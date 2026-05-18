@@ -1,0 +1,14 @@
+{
+  "name": "bankeru",
+  "version": "1.0.0",
+  "description": "In-Between Card Game with Multiplayer",
+  "main": "server.js",
+  "scripts": {
+    "start": "node launcher.js",
+    "dev": "node launcher.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  }
+}
