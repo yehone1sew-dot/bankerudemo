@@ -4,6 +4,17 @@ const { Server } = require('socket.io');
 const path = require('path');
 
 const app = express();
+
+app.enable('trust proxy');
+
+// Redirect HTTP to HTTPS in production, but allow HTTP on localhost
+app.use((req, res, next) => {
+  const host = req.header('host') || '';
+  if (!host.includes('localhost') && req.header('x-forwarded-proto') !== 'https') {
+    return res.redirect(`https://${host}${req.url}`);
+  }
+  next();
+});
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' }
