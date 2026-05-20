@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bankeru Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ── Design Tokens ─────────────────────────────────────────── */
+:root {
+  --bg-0: #07090f;
+  --bg-1: #0a0e1a;
+  --bg-2: #111827;
+  --bg-surface: rgba(255,255,255,0.05);
+  --bg-surface-raised: rgba(255,255,255,0.08);
+  --bg-overlay: rgba(0,0,0,0.75);
+
+  --gold-300: #fde68a;
+  --gold-400: #f5c842;
+  --gold-500: #e6a817;
+  --gold-600: #b07b0d;
+
+  --win-base: #22c55e;
+  --win-dim: rgba(34,197,94,0.12);
+  --win-glow: rgba(34,197,94,0.45);
+
+  --lose-base: #ef4444;
+  --lose-dim: rgba(239,68,68,0.12);
+  --lose-glow: rgba(239,68,68,0.45);
+
+  --replay-base: #f97316;
+  --replay-dim: rgba(249,115,22,0.12);
+  --replay-glow: rgba(249,115,22,0.45);
+
+  --streak-low: #fb923c;
+  --streak-mid: #f97316;
+  --streak-high: #ef4444;
+  --streak-legendary: #dc2626;
+
+  --rank-gold: #f5c842;
+  --rank-silver: #94a3b8;
+  --rank-bronze: #cd7c3a;
+
+  --mode-classic: #3b82f6;
+  --mode-speed: #f97316;
+  --mode-highstakes: #a855f7;
+  --mode-tournament: #ef4444;
+  --mode-solo: #22c55e;
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
+  --text-inverse: #0a0e1a;
+
+  --border-default: rgba(255,255,255,0.10);
+  --border-strong: rgba(255,255,255,0.18);
+  --border-gold: rgba(245,200,66,0.35);
+
+  --felt-base: #0d4f2e;
+  --felt-dark: #0a3d22;
+  --felt-rim: #082a17;
+
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-md: 17px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 32px;
+  --text-3xl: clamp(40px, 8vw, 64px);
+  --text-display: clamp(56px, 14vw, 96px);
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-black: 900;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.06em;
+  --tracking-wider: 0.12em;
+  --tracking-widest: 0.2em;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  --shadow-card: 0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow-gold: 0 0 40px rgba(245,200,66,0.45);
+  --shadow-glow-win: 0 0 40px rgba(34,197,94,0.50);
+  --shadow-glow-lose: 0 0 40px rgba(239,68,68,0.50);
+  --shadow-glow-replay: 0 0 40px rgba(249,115,22,0.50);
+  --shadow-glow-streak: 0 0 60px rgba(239,68,68,0.60), 0 0 120px rgba(245,158,11,0.30);
+
+  --dur-fast: 150ms;
+  --dur-normal: 300ms;
+  --dur-slow: 500ms;
+  --dur-dramatic: 700ms;
+
+  --ease-out: cubic-bezier(0.16,1,0.3,1);
+  --ease-bounce: cubic-bezier(0.34,1.56,0.64,1);
+  --ease-spring: cubic-bezier(0.43,0.195,0.020,1.0);
+
+  --card-w: 80px;
+  --card-h: 112px;
+  --card-w-sm: 64px;
+  --card-h-sm: 92px;
+}
+
+/* ── Reset & Base ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-0);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── Nav ───────────────────────────────────────────────────── */
+.ds-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(7,9,15,0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-default);
+  padding: var(--space-3) var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ds-nav::-webkit-scrollbar { display: none; }
+.ds-nav-logo {
+  font-size: var(--text-md);
+  font-weight: var(--weight-black);
+  letter-spacing: var(--tracking-wider);
+  color: var(--gold-400);
+  white-space: nowrap;
+  margin-right: var(--space-4);
+  text-shadow: var(--shadow-glow-gold);
+}
+.ds-nav a {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.ds-nav a:hover { color: var(--text-primary); background: var(--bg-surface); }
+
+/* ── Layout ────────────────────────────────────────────────── */
+.ds-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--space-12) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.ds-section { display: flex; flex-direction: column; gap: var(--space-8); }
+
+.ds-section-title {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.ds-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.ds-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
+  margin-top: var(--space-2);
+}
+
+/* ── Color Swatches ────────────────────────────────────────── */
+.swatch-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.swatch-group { display: flex; flex-direction: column; gap: var(--space-2); }
+.swatch-group-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.swatch-row { display: flex; gap: var(--space-2); }
+.swatch {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 4px;
+  cursor: default;
+  transition: transform var(--dur-fast) var(--ease-bounce);
+}
+.swatch:hover { transform: scale(1.1); }
+.swatch span {
+  font-size: 9px;
+  color: rgba(255,255,255,0.6);
+  font-weight: 600;
+}
+
+/* ── Typography ────────────────────────────────────────────── */
+.type-scale { display: flex; flex-direction: column; gap: var(--space-5); }
+.type-row { display: flex; align-items: baseline; gap: var(--space-6); }
+.type-meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  width: 80px;
+  flex-shrink: 0;
+}
+
+/* ── Spacing ───────────────────────────────────────────────── */
+.spacing-scale { display: flex; flex-direction: column; gap: var(--space-3); }
+.spacing-row { display: flex; align-items: center; gap: var(--space-4); }
+.spacing-bar {
+  height: 24px;
+  background: var(--gold-500);
+  border-radius: 3px;
+  opacity: 0.7;
+}
+.spacing-meta {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  width: 80px;
+  flex-shrink: 0;
+}
+
+/* ── Buttons ───────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  transition: all var(--dur-normal) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+}
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0);
+  transition: background var(--dur-fast);
+}
+.btn:hover::after { background: rgba(255,255,255,0.08); }
+.btn:active { transform: scale(0.97); }
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold-400), var(--gold-500));
+  color: var(--text-inverse);
+  box-shadow: 0 4px 24px rgba(245,200,66,0.35), 0 1px 0 rgba(255,255,255,0.2) inset;
+}
+.btn-gold:hover { box-shadow: var(--shadow-glow-gold); }
+
+.btn-win {
+  background: linear-gradient(135deg, var(--win-base), #16a34a);
+  color: #fff;
+  box-shadow: 0 4px 24px var(--win-glow);
+}
+
+.btn-ghost {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+}
+.btn-ghost:hover { border-color: var(--border-gold); color: var(--gold-300); }
+
+.btn-danger {
+  background: var(--lose-dim);
+  color: var(--lose-base);
+  border: 1px solid rgba(239,68,68,0.25);
+}
+.btn-danger:hover { background: rgba(239,68,68,0.2); box-shadow: var(--shadow-glow-lose); }
+
+.btn-sm { padding: var(--space-2) var(--space-4); font-size: var(--text-xs); }
+
+/* ── Badges ────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+}
+.badge-win { background: var(--win-dim); color: var(--win-base); border: 1px solid rgba(34,197,94,0.2); }
+.badge-lose { background: var(--lose-dim); color: var(--lose-base); border: 1px solid rgba(239,68,68,0.2); }
+.badge-replay { background: var(--replay-dim); color: var(--replay-base); border: 1px solid rgba(249,115,22,0.2); }
+.badge-gold { background: rgba(245,200,66,0.12); color: var(--gold-300); border: 1px solid var(--border-gold); }
+
+/* ── Bet Slider ────────────────────────────────────────────── */
+.bet-control {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  max-width: 400px;
+  width: 100%;
+}
+.bet-amount {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-black);
+  color: var(--gold-400);
+  text-align: center;
+  margin-bottom: var(--space-4);
+  text-shadow: 0 0 20px rgba(245,200,66,0.3);
+}
+input[type="range"] {
+  width: 100%;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, var(--gold-500) 0%, var(--gold-500) 50%, var(--border-default) 50%);
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gold-400);
+  box-shadow: 0 0 12px rgba(245,200,66,0.5);
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-bounce);
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+.bet-row { display: flex; justify-content: space-between; margin-top: var(--space-3); }
+.bet-hint { font-size: var(--text-xs); color: var(--text-muted); }
+
+/* ── Card Table ────────────────────────────────────────────── */
+.felt-table {
+  background: radial-gradient(ellipse 80% 60% at 50% 40%, var(--felt-base), var(--felt-dark));
+  border: 6px solid var(--felt-rim);
+  border-radius: 120px;
+  padding: var(--space-10) var(--space-12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  position: relative;
+  box-shadow: 0 0 0 2px rgba(8,42,23,0.8), 0 16px 64px rgba(0,0,0,0.8);
+  max-width: 600px;
+}
+.card {
+  width: var(--card-w);
+  height: var(--card-h);
+  background: #fff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-black);
+  color: #1e293b;
+  flex-shrink: 0;
+  position: relative;
+  transition: transform var(--dur-normal) var(--ease-bounce);
+}
+.card:hover { transform: translateY(-8px) rotate(-2deg); }
+.card.red { color: #dc2626; }
+.card-back {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0f2035 100%);
+  color: transparent;
+}
+.card-back::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-sm);
+}
+.card-suit {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.pot-display {
+  position: absolute;
+  bottom: var(--space-5);
+  background: rgba(0,0,0,0.5);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--gold-300);
+  letter-spacing: var(--tracking-wide);
+}
+
+/* ── Game Mode Selector ────────────────────────────────────── */
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-3);
+  max-width: 700px;
+}
+.mode-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-4);
+  cursor: pointer;
+  transition: all var(--dur-normal) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+}
+.mode-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  opacity: 0;
+  transition: opacity var(--dur-normal) var(--ease-out);
+}
+.mode-card.selected,
+.mode-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.mode-card.selected::before,
+.mode-card:hover::before { opacity: 1; }
+
+.mode-card[data-mode="classic"]::before { background: var(--mode-classic); }
+.mode-card[data-mode="speed"]::before { background: var(--mode-speed); }
+.mode-card[data-mode="highstakes"]::before { background: var(--mode-highstakes); }
+.mode-card[data-mode="tournament"]::before { background: var(--mode-tournament); }
+.mode-card[data-mode="solo"]::before { background: var(--mode-solo); }
+
+.mode-card[data-mode="classic"].selected { border-color: rgba(59,130,246,0.4); box-shadow: 0 0 24px rgba(59,130,246,0.15); }
+.mode-card[data-mode="speed"].selected { border-color: rgba(249,115,22,0.4); box-shadow: 0 0 24px rgba(249,115,22,0.15); }
+.mode-card[data-mode="highstakes"].selected { border-color: rgba(168,85,247,0.4); box-shadow: 0 0 24px rgba(168,85,247,0.15); }
+.mode-card[data-mode="tournament"].selected { border-color: rgba(239,68,68,0.4); box-shadow: 0 0 24px rgba(239,68,68,0.15); }
+.mode-card[data-mode="solo"].selected { border-color: rgba(34,197,94,0.4); box-shadow: 0 0 24px rgba(34,197,94,0.15); }
+
+.mode-icon { font-size: 28px; margin-bottom: var(--space-2); }
+.mode-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wide);
+  margin-bottom: var(--space-1);
+}
+.mode-desc {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.mode-classic .mode-name { color: var(--mode-classic); }
+.mode-speed .mode-name { color: var(--mode-speed); }
+.mode-highstakes .mode-name { color: var(--mode-highstakes); }
+.mode-tournament .mode-name { color: var(--mode-tournament); }
+.mode-solo .mode-name { color: var(--mode-solo); }
+
+/* ── Streak Counter ────────────────────────────────────────── */
+.streak-states { display: flex; gap: var(--space-6); flex-wrap: wrap; align-items: flex-end; }
+.streak-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+.streak-orb {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--weight-black);
+  position: relative;
+  transition: transform var(--dur-normal) var(--ease-bounce);
+}
+.streak-orb:hover { transform: scale(1.1); }
+.streak-count { font-size: var(--text-xl); line-height: 1; }
+.streak-word { font-size: 9px; letter-spacing: var(--tracking-widest); text-transform: uppercase; }
+.streak-0 { background: var(--bg-surface); color: var(--text-muted); border: 2px solid var(--border-default); }
+.streak-3 {
+  background: radial-gradient(circle at 30% 30%, rgba(251,146,60,0.3), rgba(249,115,22,0.1));
+  color: var(--streak-low);
+  border: 2px solid rgba(251,146,60,0.4);
+  box-shadow: 0 0 20px rgba(251,146,60,0.25);
+}
+.streak-5 {
+  background: radial-gradient(circle at 30% 30%, rgba(239,68,68,0.3), rgba(220,38,38,0.1));
+  color: var(--streak-high);
+  border: 2px solid rgba(239,68,68,0.4);
+  box-shadow: 0 0 30px rgba(239,68,68,0.35);
+}
+.streak-10 {
+  background: radial-gradient(circle at 30% 30%, rgba(220,38,38,0.4), rgba(245,158,11,0.15));
+  color: #fff;
+  border: 2px solid rgba(239,68,68,0.6);
+  box-shadow: var(--shadow-glow-streak);
+  animation: legendary-pulse 2s infinite;
+}
+@keyframes legendary-pulse {
+  0%, 100% { box-shadow: var(--shadow-glow-streak); }
+  50% { box-shadow: 0 0 80px rgba(239,68,68,0.8), 0 0 160px rgba(245,158,11,0.4); }
+}
+.streak-label { font-size: var(--text-xs); color: var(--text-muted); }
+
+.streak-milestone {
+  background: linear-gradient(135deg, rgba(220,38,38,0.15), rgba(245,158,11,0.08));
+  border: 1px solid rgba(220,38,38,0.3);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5) var(--space-8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  box-shadow: var(--shadow-glow-streak);
+  max-width: 280px;
+  text-align: center;
+}
+.streak-milestone-num {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-black);
+  background: linear-gradient(135deg, #ef4444, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 12px rgba(239,68,68,0.5));
+}
+.streak-milestone-text {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--streak-legendary);
+}
+.streak-milestone-sub { font-size: var(--text-xs); color: var(--text-secondary); }
+.flame { font-size: 32px; animation: float 1.5s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+/* ── Leaderboard ───────────────────────────────────────────── */
+.leaderboard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  max-width: 480px;
+  width: 100%;
+}
+.leaderboard-header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--border-default);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--gold-400);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-default);
+  transition: background var(--dur-fast);
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row:hover { background: var(--bg-surface-raised); }
+.lb-row.me { background: rgba(245,200,66,0.06); border-left: 2px solid var(--gold-400); }
+.lb-rank {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--weight-black);
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+.lb-rank-1 { background: rgba(245,200,66,0.2); color: var(--rank-gold); border: 1.5px solid var(--rank-gold); }
+.lb-rank-2 { background: rgba(148,163,184,0.15); color: var(--rank-silver); border: 1.5px solid var(--rank-silver); }
+.lb-rank-3 { background: rgba(205,124,58,0.15); color: var(--rank-bronze); border: 1.5px solid var(--rank-bronze); }
+.lb-rank-n { background: var(--bg-surface); color: var(--text-muted); }
+.lb-name { flex: 1; font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.lb-streak {
+  font-size: var(--text-xs);
+  color: var(--streak-mid);
+  font-weight: var(--weight-bold);
+}
+.lb-chips {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--gold-300);
+  letter-spacing: var(--tracking-tight);
+}
+.lb-you {
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-widest);
+  color: var(--gold-500);
+  text-transform: uppercase;
+  background: rgba(245,200,66,0.1);
+  border-radius: var(--radius-full);
+  padding: 1px 6px;
+}
+
+/* ── Player Cards ──────────────────────────────────────────── */
+.player-grid { display: flex; gap: var(--space-4); flex-wrap: wrap; }
+.player-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  transition: all var(--dur-normal) var(--ease-out);
+  position: relative;
+}
+.player-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-black);
+  border: 2px solid var(--border-default);
+  background: var(--bg-2);
+}
+.player-name {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.player-chips {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--gold-300);
+}
+.player-status {
+  font-size: 9px;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.player-active {
+  border-color: var(--gold-400);
+  background: rgba(245,200,66,0.05);
+  box-shadow: 0 0 20px rgba(245,200,66,0.15);
+}
+.player-active .player-avatar { border-color: var(--gold-400); }
+.player-active::before {
+  content: 'TURN';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gold-400);
+  color: var(--text-inverse);
+  font-size: 9px;
+  font-weight: var(--weight-black);
+  letter-spacing: var(--tracking-wider);
+  border-radius: var(--radius-full);
+  padding: 1px 8px;
+}
+
+.player-me .player-avatar { border-color: var(--mode-classic); }
+.player-me { border-color: rgba(59,130,246,0.3); }
+.player-me .player-name::after { content: ' (You)'; color: var(--text-muted); font-weight: 400; }
+
+.player-bot .player-avatar {
+  background: rgba(168,85,247,0.1);
+  border-color: rgba(168,85,247,0.3);
+  color: #a855f7;
+}
+.player-bot .player-status { color: #a855f7; }
+
+/* ── Event Overlays ────────────────────────────────────────── */
+.overlays-row { display: flex; gap: var(--space-4); flex-wrap: wrap; }
+.event-overlay {
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  width: 200px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.event-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-xl);
+}
+.event-icon { font-size: 48px; position: relative; z-index: 1; }
+.event-label {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-black);
+  letter-spacing: var(--tracking-wider);
+  position: relative;
+  z-index: 1;
+}
+.event-sublabel {
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  position: relative;
+  z-index: 1;
+}
+.event-amount {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  position: relative;
+  z-index: 1;
+}
+
+.overlay-win {
+  background: radial-gradient(ellipse at 50% 0%, rgba(34,197,94,0.25), rgba(34,197,94,0.05));
+  border: 1.5px solid rgba(34,197,94,0.35);
+  box-shadow: var(--shadow-glow-win), inset 0 1px 0 rgba(34,197,94,0.1);
+}
+.overlay-win .event-label { color: var(--win-base); }
+.overlay-win .event-amount { color: var(--win-base); }
+.overlay-win .event-sublabel { color: rgba(34,197,94,0.7); }
+.win-anim { animation: win-bounce 0.6s var(--ease-bounce); }
+@keyframes win-bounce { 0%{transform:scale(0.5) translateY(20px);opacity:0} 100%{transform:scale(1) translateY(0);opacity:1} }
+
+.overlay-lose {
+  background: radial-gradient(ellipse at 50% 0%, rgba(239,68,68,0.2), rgba(239,68,68,0.04));
+  border: 1.5px solid rgba(239,68,68,0.3);
+  box-shadow: var(--shadow-glow-lose), inset 0 1px 0 rgba(239,68,68,0.08);
+}
+.overlay-lose .event-label { color: var(--lose-base); }
+.overlay-lose .event-amount { color: var(--lose-base); }
+.overlay-lose .event-sublabel { color: rgba(239,68,68,0.6); }
+.lose-anim { animation: lose-shake 0.5s ease; }
+@keyframes lose-shake {
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)}
+  60%{transform:translateX(-4px)} 80%{transform:translateX(4px)}
+}
+
+.overlay-replay {
+  background: radial-gradient(ellipse at 50% 0%, rgba(249,115,22,0.2), rgba(249,115,22,0.04));
+  border: 1.5px solid rgba(249,115,22,0.3);
+  box-shadow: var(--shadow-glow-replay), inset 0 1px 0 rgba(249,115,22,0.08);
+}
+.overlay-replay .event-label { color: var(--replay-base); }
+.overlay-replay .event-sublabel { color: rgba(249,115,22,0.7); }
+.replay-anim { animation: replay-spin 0.5s var(--ease-out); }
+@keyframes replay-spin { 0%{transform:rotate(-180deg) scale(0.5)} 100%{transform:rotate(0) scale(1)} }
+
+.overlay-streak {
+  background: radial-gradient(ellipse at 50% 0%, rgba(220,38,38,0.25), rgba(245,158,11,0.08));
+  border: 1.5px solid rgba(220,38,38,0.4);
+  box-shadow: var(--shadow-glow-streak);
+}
+.overlay-streak .event-label {
+  background: linear-gradient(135deg, #ef4444, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.overlay-streak .event-sublabel { color: rgba(245,158,11,0.8); }
+
+/* ── Game Over ─────────────────────────────────────────────── */
+.gameover-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-10);
+  max-width: 400px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+.gameover-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-400), transparent);
+}
+.trophy { font-size: 72px; animation: trophy-bounce 1s var(--ease-bounce); }
+@keyframes trophy-bounce {
+  0%{transform:translateY(-40px);opacity:0} 60%{transform:translateY(8px)} 80%{transform:translateY(-4px)} 100%{transform:translateY(0);opacity:1}
+}
+.gameover-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-black);
+  letter-spacing: var(--tracking-wider);
+  text-align: center;
+}
+.gameover-results {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-raised);
+}
+.result-row.winner {
+  background: rgba(245,200,66,0.08);
+  border: 1px solid var(--border-gold);
+}
+.result-name { font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.result-chips { font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--gold-300); }
+.gameover-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; justify-content: center; }
+
+/* ── Game Log ──────────────────────────────────────────────── */
+.game-log {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  max-width: 400px;
+  width: 100%;
+}
+.log-header {
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border-default);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.log-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: var(--text-xs);
+  transition: background var(--dur-fast);
+}
+.log-entry:last-child { border-bottom: none; }
+.log-entry:hover { background: var(--bg-surface-raised); }
+.log-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.log-win .log-dot { background: var(--win-base); box-shadow: 0 0 6px var(--win-base); }
+.log-lose .log-dot { background: var(--lose-base); box-shadow: 0 0 6px var(--lose-base); }
+.log-replay .log-dot { background: var(--replay-base); box-shadow: 0 0 6px var(--replay-base); }
+.log-system .log-dot { background: var(--text-muted); }
+.log-deal .log-dot { background: var(--gold-400); box-shadow: 0 0 6px var(--gold-400); }
+.log-text { flex: 1; color: var(--text-secondary); }
+.log-text strong { color: var(--text-primary); font-weight: var(--weight-semibold); }
+.log-amount { font-weight: var(--weight-bold); }
+.log-win .log-amount { color: var(--win-base); }
+.log-lose .log-amount { color: var(--lose-base); }
+.log-replay .log-amount { color: var(--replay-base); }
+.log-deal .log-amount { color: var(--gold-400); }
+
+/* ── Surface Cards (generic) ───────────────────────────────── */
+.surface-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-card);
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="ds-nav">
+  <span class="ds-nav-logo">BANKERU</span>
+  <a href="#colors">Colors</a>
+  <a href="#typography">Type</a>
+  <a href="#spacing">Spacing</a>
+  <a href="#buttons">Buttons</a>
+  <a href="#table">Table</a>
+  <a href="#modes">Modes</a>
+  <a href="#streaks">Streaks</a>
+  <a href="#leaderboard">Board</a>
+  <a href="#players">Players</a>
+  <a href="#events">Events</a>
+  <a href="#gameover">End</a>
+  <a href="#log">Log</a>
+</nav>
+
+<div class="ds-page">
+
+  <!-- COLORS -->
+  <section class="ds-section" id="colors">
+    <h2 class="ds-section-title">Color System</h2>
+
+    <div class="swatch-grid">
+
+      <div class="swatch-group">
+        <div class="swatch-group-label">Backgrounds</div>
+        <div class="swatch-row">
+          <div>
+            <div class="swatch" style="background:#07090f"><span>bg-0</span></div>
+          </div>
+          <div>
+            <div class="swatch" style="background:#0a0e1a"><span>bg-1</span></div>
+          </div>
+          <div>
+            <div class="swatch" style="background:#111827"><span>bg-2</span></div>
+          </div>
+          <div>
+            <div class="swatch" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1)"><span>surf</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="swatch-group">
+        <div class="swatch-group-label">Gold</div>
+        <div class="swatch-row">
+          <div><div class="swatch" style="background:#fde68a"><span>300</span></div></div>
+          <div><div class="swatch" style="background:#f5c842"><span>400</span></div></div>
+          <div><div class="swatch" style="background:#e6a817"><span>500</span></div></div>
+          <div><div class="swatch" style="background:#b07b0d"><span>600</span></div></div>
+        </div>
+      </div>
+
+      <div class="swatch-group">
+        <div class="swatch-group-label">Semantic</div>
+        <div class="swatch-row">
+          <div><div class="swatch" style="background:#22c55e"><span>win</span></div></div>
+          <div><div class="swatch" style="background:#ef4444"><span>lose</span></div></div>
+          <div><div class="swatch" style="background:#f97316"><span>replay</span></div></div>
+        </div>
+      </div>
+
+      <div class="swatch-group">
+        <div class="swatch-group-label">Streak</div>
+        <div class="swatch-row">
+          <div><div class="swatch" style="background:#fb923c"><span>low</span></div></div>
+          <div><div class="swatch" style="background:#f97316"><span>mid</span></div></div>
+          <div><div class="swatch" style="background:#ef4444"><span>high</span></div></div>
+          <div><div class="swatch" style="background:#dc2626"><span>lgnd</span></div></div>
+        </div>
+      </div>
+
+      <div class="swatch-group">
+        <div class="swatch-group-label">Rank</div>
+        <div class="swatch-row">
+          <div><div class="swatch" style="background:#f5c842"><span>gold</span></div></div>
+          <div><div class="swatch" style="background:#94a3b8"><span>silv</span></div></div>
+          <div><div class="swatch" style="background:#cd7c3a"><span>brnz</span></div></div>
+        </div>
+      </div>
+
+      <div class="swatch-group">
+        <div class="swatch-group-label">Mode</div>
+        <div class="swatch-row">
+          <div><div class="swatch" style="background:#3b82f6"><span>clsc</span></div></div>
+          <div><div class="swatch" style="background:#f97316"><span>spd</span></div></div>
+          <div><div class="swatch" style="background:#a855f7"><span>high</span></div></div>
+          <div><div class="swatch" style="background:#ef4444"><span>tour</span></div></div>
+        </div>
+        <div class="swatch-row">
+          <div><div class="swatch" style="background:#22c55e"><span>solo</span></div></div>
+        </div>
+      </div>
+
+      <div class="swatch-group">
+        <div class="swatch-group-label">Text</div>
+        <div class="swatch-row">
+          <div><div class="swatch" style="background:#f1f5f9"><span>prmy</span></div></div>
+          <div><div class="swatch" style="background:#94a3b8"><span>sec</span></div></div>
+          <div><div class="swatch" style="background:#475569"><span>mute</span></div></div>
+        </div>
+      </div>
+
+      <div class="swatch-group">
+        <div class="swatch-group-label">Felt</div>
+        <div class="swatch-row">
+          <div><div class="swatch" style="background:#0d4f2e"><span>base</span></div></div>
+          <div><div class="swatch" style="background:#0a3d22"><span>dark</span></div></div>
+          <div><div class="swatch" style="background:#082a17"><span>rim</span></div></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- TYPOGRAPHY -->
+  <section class="ds-section" id="typography">
+    <h2 class="ds-section-title">Typography Scale — Outfit</h2>
+    <div class="type-scale">
+      <div class="type-row">
+        <span class="type-meta">display · clamp(56,14vw,96)</span>
+        <span style="font-size:clamp(56px,8vw,72px);font-weight:900;letter-spacing:-0.02em;line-height:1">BANKERU</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">3xl · clamp(40,8vw,64)</span>
+        <span style="font-size:clamp(32px,5vw,48px);font-weight:900;letter-spacing:-0.02em">WIN!</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">2xl · 32px · black</span>
+        <span style="font-size:32px;font-weight:900;color:var(--gold-400)">₿ 1,000</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">xl · 24px · bold</span>
+        <span style="font-size:24px;font-weight:700">Place Your Bet</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">lg · 20px · semibold</span>
+        <span style="font-size:20px;font-weight:600">Game Lobby</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">md · 17px · medium</span>
+        <span style="font-size:17px;font-weight:500">Player joined the room</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">base · 15px · normal</span>
+        <span style="font-size:15px;font-weight:400;color:var(--text-secondary)">Cards dealt. Pot is 240 chips.</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">sm · 13px</span>
+        <span style="font-size:13px;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;font-weight:600">BUY-IN: 100</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">xs · 11px</span>
+        <span style="font-size:11px;color:var(--text-muted);letter-spacing:0.2em;text-transform:uppercase;font-weight:600">STREAK COUNT</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPACING -->
+  <section class="ds-section" id="spacing">
+    <h2 class="ds-section-title">Spacing Scale</h2>
+    <div class="spacing-scale">
+      <div class="spacing-row"><span class="spacing-meta">1 · 4px</span><div class="spacing-bar" style="width:4px"></div></div>
+      <div class="spacing-row"><span class="spacing-meta">2 · 8px</span><div class="spacing-bar" style="width:8px"></div></div>
+      <div class="spacing-row"><span class="spacing-meta">3 · 12px</span><div class="spacing-bar" style="width:12px"></div></div>
+      <div class="spacing-row"><span class="spacing-meta">4 · 16px</span><div class="spacing-bar" style="width:16px"></div></div>
+      <div class="spacing-row"><span class="spacing-meta">5 · 20px</span><div class="spacing-bar" style="width:20px"></div></div>
+      <div class="spacing-row"><span class="spacing-meta">6 · 24px</span><div class="spacing-bar" style="width:24px"></div></div>
+      <div class="spacing-row"><span class="spacing-meta">8 · 32px</span><div class="spacing-bar" style="width:32px"></div></div>
+      <div class="spacing-row"><span class="spacing-meta">10 · 40px</span><div class="spacing-bar" style="width:40px"></div></div>
+      <div class="spacing-row"><span class="spacing-meta">12 · 48px</span><div class="spacing-bar" style="width:48px"></div></div>
+      <div class="spacing-row"><span class="spacing-meta">16 · 64px</span><div class="spacing-bar" style="width:64px"></div></div>
+    </div>
+  </section>
+
+  <!-- BUTTONS -->
+  <section class="ds-section" id="buttons">
+    <h2 class="ds-section-title">Buttons, Badges &amp; Bet Control</h2>
+    <div class="ds-row">
+      <button class="btn btn-gold">Bet Now</button>
+      <button class="btn btn-win">Collect Win</button>
+      <button class="btn btn-ghost">Leave Room</button>
+      <button class="btn btn-danger">Pass</button>
+      <button class="btn btn-gold btn-sm">Join</button>
+      <button class="btn btn-ghost btn-sm">Copy Link</button>
+    </div>
+    <div class="ds-row" style="margin-top: 8px;">
+      <span class="badge badge-win">✓ Win</span>
+      <span class="badge badge-lose">✗ Lose</span>
+      <span class="badge badge-replay">⟳ Replay</span>
+      <span class="badge badge-gold">♦ High Stakes</span>
+    </div>
+    <div class="bet-control">
+      <div class="bet-amount" id="bet-display">240 chips</div>
+      <input type="range" min="0" max="500" value="240" id="bet-slider"
+        oninput="document.getElementById('bet-display').textContent = this.value + ' chips';
+          this.style.background='linear-gradient(to right, var(--gold-500) 0%, var(--gold-500) '+(this.value/5)+'%, var(--border-default) '+(this.value/5)+'%)'">
+      <div class="bet-row">
+        <span class="bet-hint">0 — pass</span>
+        <span class="bet-hint">pot: 500</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TABLE -->
+  <section class="ds-section" id="table">
+    <h2 class="ds-section-title">Felt Card Table</h2>
+    <div class="felt-table">
+      <div class="card" style="transform:rotate(-5deg)">
+        <span class="card-suit" style="color:#dc2626">♥</span>
+        <span style="color:#dc2626">K</span>
+      </div>
+      <div class="card card-back"></div>
+      <div class="card" style="transform:rotate(3deg)">
+        <span class="card-suit">♠</span>
+        4
+      </div>
+      <div class="pot-display">POT: 480</div>
+    </div>
+  </section>
+
+  <!-- GAME MODES -->
+  <section class="ds-section" id="modes">
+    <h2 class="ds-section-title">Game Mode Selector</h2>
+    <div class="mode-grid">
+      <div class="mode-card mode-classic selected" data-mode="classic" onclick="selectMode(this)">
+        <div class="mode-icon">🃏</div>
+        <div class="mode-name">Classic</div>
+        <div class="mode-desc">Standard multiplayer. Take turns, bet freely.</div>
+      </div>
+      <div class="mode-card mode-speed" data-mode="speed" onclick="selectMode(this)">
+        <div class="mode-icon">⚡</div>
+        <div class="mode-name">Speed</div>
+        <div class="mode-desc">10-second turns. Fast elimination rounds.</div>
+      </div>
+      <div class="mode-card mode-highstakes" data-mode="highstakes" onclick="selectMode(this)">
+        <div class="mode-icon">💎</div>
+        <div class="mode-name">High Stakes</div>
+        <div class="mode-desc">Minimum 100 chip buy-in. Max bet = pot.</div>
+      </div>
+      <div class="mode-card mode-tournament" data-mode="tournament" onclick="selectMode(this)">
+        <div class="mode-icon">🏆</div>
+        <div class="mode-name">Tournament</div>
+        <div class="mode-desc">Bracket play. Last player standing wins.</div>
+      </div>
+      <div class="mode-card mode-solo" data-mode="solo" onclick="selectMode(this)">
+        <div class="mode-icon">🤖</div>
+        <div class="mode-name">Solo</div>
+        <div class="mode-desc">Vs. dealer AI. Practice or grind chips.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STREAKS -->
+  <section class="ds-section" id="streaks">
+    <h2 class="ds-section-title">Streak Counter States</h2>
+    <div class="streak-states">
+      <div class="streak-badge">
+        <div class="streak-orb streak-0">
+          <span class="streak-count">0</span>
+          <span class="streak-word">streak</span>
+        </div>
+        <span class="streak-label">No streak</span>
+      </div>
+      <div class="streak-badge">
+        <div class="streak-orb streak-3">
+          <span class="streak-count">3</span>
+          <span class="streak-word">streak</span>
+        </div>
+        <span class="streak-label">3× — Warm</span>
+      </div>
+      <div class="streak-badge">
+        <div class="streak-orb streak-5">
+          <span class="streak-count">5</span>
+          <span class="streak-word">streak</span>
+        </div>
+        <span class="streak-label">5× — Hot</span>
+      </div>
+      <div class="streak-badge">
+        <div class="streak-orb streak-10">
+          <span class="streak-count">10</span>
+          <span class="streak-word">🔥</span>
+        </div>
+        <span class="streak-label">10× — Legendary</span>
+      </div>
+
+      <div class="streak-milestone">
+        <div class="flame">🔥</div>
+        <div class="streak-milestone-num">10×</div>
+        <div class="streak-milestone-text">Legendary Streak</div>
+        <div class="streak-milestone-sub">10 consecutive wins — unmatched</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LEADERBOARD -->
+  <section class="ds-section" id="leaderboard">
+    <h2 class="ds-section-title">Leaderboard</h2>
+    <div class="leaderboard">
+      <div class="leaderboard-header">🏆 Top Players</div>
+      <div class="lb-row">
+        <div class="lb-rank lb-rank-1">1</div>
+        <div class="lb-name">SolomonK</div>
+        <div class="lb-streak">🔥10</div>
+        <div class="lb-chips">12,450</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank lb-rank-2">2</div>
+        <div class="lb-name">AbebeMD</div>
+        <div class="lb-streak">🔥5</div>
+        <div class="lb-chips">9,800</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank lb-rank-3">3</div>
+        <div class="lb-name">TilahunB</div>
+        <div class="lb-streak">🔥3</div>
+        <div class="lb-chips">7,340</div>
+      </div>
+      <div class="lb-row me">
+        <div class="lb-rank lb-rank-n">8</div>
+        <div class="lb-name">Kirubel <span class="lb-you">you</span></div>
+        <div class="lb-streak">—</div>
+        <div class="lb-chips">3,120</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank lb-rank-n">9</div>
+        <div class="lb-name">BotPlayer</div>
+        <div class="lb-streak">—</div>
+        <div class="lb-chips">2,800</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLAYERS -->
+  <section class="ds-section" id="players">
+    <h2 class="ds-section-title">Player Cards</h2>
+    <div class="player-grid">
+      <div class="player-card player-active">
+        <div class="player-avatar" style="background:rgba(245,200,66,0.12);border-color:var(--gold-400);color:var(--gold-300)">AB</div>
+        <div class="player-name">AbebeMD</div>
+        <div class="player-chips">1,240</div>
+        <div class="player-status">Betting...</div>
+      </div>
+      <div class="player-card player-me">
+        <div class="player-avatar" style="background:rgba(59,130,246,0.12);border-color:var(--mode-classic);color:var(--mode-classic)">KS</div>
+        <div class="player-name">Kirubel</div>
+        <div class="player-chips">3,120</div>
+        <div class="player-status">Waiting</div>
+      </div>
+      <div class="player-card player-bot">
+        <div class="player-avatar">🤖</div>
+        <div class="player-name">DealerBot</div>
+        <div class="player-chips">2,800</div>
+        <div class="player-status">AI Player</div>
+      </div>
+      <div class="player-card">
+        <div class="player-avatar">TH</div>
+        <div class="player-name">TilahunB</div>
+        <div class="player-chips">950</div>
+        <div class="player-status">Passed</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EVENT OVERLAYS -->
+  <section class="ds-section" id="events">
+    <h2 class="ds-section-title">Event Overlays — Dramatic Views</h2>
+    <div class="overlays-row">
+      <div class="event-overlay overlay-win win-anim">
+        <div class="event-icon">✨</div>
+        <div class="event-label">WIN</div>
+        <div class="event-sublabel">Between the cards</div>
+        <div class="event-amount">+320 chips</div>
+      </div>
+
+      <div class="event-overlay overlay-lose lose-anim">
+        <div class="event-icon">💀</div>
+        <div class="event-label">LOSE</div>
+        <div class="event-sublabel">Outside the spread</div>
+        <div class="event-amount">−100 chips</div>
+      </div>
+
+      <div class="event-overlay overlay-replay replay-anim">
+        <div class="event-icon">⟳</div>
+        <div class="event-label">REPLAY</div>
+        <div class="event-sublabel">Matched a border card</div>
+        <div style="font-size:var(--text-xs);color:var(--replay-base);position:relative;z-index:1">ante again</div>
+      </div>
+
+      <div class="event-overlay overlay-streak">
+        <div class="event-icon">🔥</div>
+        <div class="event-label">10×</div>
+        <div class="event-sublabel">LEGENDARY STREAK</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAME OVER -->
+  <section class="ds-section" id="gameover">
+    <h2 class="ds-section-title">Game Over Screen</h2>
+    <div class="gameover-panel">
+      <div class="trophy">🏆</div>
+      <div class="gameover-title" style="color:var(--gold-400)">SolomonK Wins!</div>
+      <div class="gameover-results">
+        <div class="result-row winner">
+          <div class="result-name" style="color:var(--gold-300)">🥇 SolomonK</div>
+          <div class="result-chips">4,820</div>
+        </div>
+        <div class="result-row">
+          <div class="result-name">🥈 AbebeMD</div>
+          <div class="result-chips" style="color:var(--rank-silver)">2,340</div>
+        </div>
+        <div class="result-row">
+          <div class="result-name">🥉 Kirubel</div>
+          <div class="result-chips" style="color:var(--rank-bronze)">1,120</div>
+        </div>
+        <div class="result-row" style="opacity:0.5">
+          <div class="result-name">TilahunB</div>
+          <div class="result-chips" style="color:var(--text-muted)">0</div>
+        </div>
+      </div>
+      <div class="gameover-actions">
+        <button class="btn btn-gold">Play Again</button>
+        <button class="btn btn-ghost btn-sm">Lobby</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAME LOG -->
+  <section class="ds-section" id="log">
+    <h2 class="ds-section-title">Game Log</h2>
+    <div class="game-log">
+      <div class="log-header">Recent Events</div>
+      <div class="log-entry log-deal">
+        <div class="log-dot"></div>
+        <div class="log-text"><strong>AbebeMD</strong> dealt <strong>K♠</strong> &amp; <strong>4♥</strong></div>
+        <div class="log-amount">ante 10</div>
+      </div>
+      <div class="log-entry log-win">
+        <div class="log-dot"></div>
+        <div class="log-text"><strong>AbebeMD</strong> bet &amp; won between K–4</div>
+        <div class="log-amount">+240</div>
+      </div>
+      <div class="log-entry log-replay">
+        <div class="log-dot"></div>
+        <div class="log-text"><strong>SolomonK</strong> hit the post — replay!</div>
+        <div class="log-amount">re-ante</div>
+      </div>
+      <div class="log-entry log-lose">
+        <div class="log-dot"></div>
+        <div class="log-text"><strong>TilahunB</strong> lost — outside the spread</div>
+        <div class="log-amount">−100</div>
+      </div>
+      <div class="log-entry log-system">
+        <div class="log-dot"></div>
+        <div class="log-text">Game started — 4 players, 100 chip buy-in</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+function selectMode(el) {
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
+</body>
+</html>

@@ -72,4 +72,24 @@ async function recordLoss(userId) {
   return run('UPDATE users SET losses = losses + 1 WHERE id = ?', [userId]);
 }
 
-module.exports = { getOrCreate, getById, deductChips, refundChips, recordWin, recordLoss };
+async function setTheme(userId, themeId) {
+  return run('UPDATE users SET theme = ? WHERE id = ?', [themeId, userId]);
+}
+
+async function unlockTheme(userId, themeId, cost) {
+  const user = await getById(userId);
+  if (!user) throw new Error('User not found');
+  if (user.chips < cost) throw new Error('Insufficient chips');
+
+  const unlocked = JSON.parse(user.unlocked_themes || '["casino","midnight"]');
+  if (unlocked.includes(themeId)) return user;
+
+  unlocked.push(themeId);
+  await run(
+    'UPDATE users SET chips = chips - ?, unlocked_themes = ?, theme = ? WHERE id = ?',
+    [cost, JSON.stringify(unlocked), themeId, userId]
+  );
+  return getById(userId);
+}
+
+module.exports = { getOrCreate, getById, deductChips, refundChips, recordWin, recordLoss, setTheme, unlockTheme };

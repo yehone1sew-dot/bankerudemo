@@ -10,6 +10,15 @@ module.exports = {
   DEFAULT_ANTE: 10,
   LOG_LIMIT: 30,
 
+  THEMES: {
+    casino:   { price: 0 },
+    midnight: { price: 0 },
+    ember:    { price: 500 },
+    ice:      { price: 500 },
+    royal:    { price: 1000 },
+  },
+  DEFAULT_THEME: 'casino',
+
   TIMING: {
     BOT_ANTE_MS: 800,
     BOT_BET_MS: 1500,

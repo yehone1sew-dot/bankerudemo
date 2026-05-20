@@ -11,6 +11,7 @@ let myName = '';
 let myChips = 100;
 let roomState = null;
 let currentLang = 'en';
+let selectedMode = 'classic';
 
 // ── DOM Helpers ───────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -121,6 +122,65 @@ $('langSelect').addEventListener('change', (e) => {
 });
 
 // ── Lobby ─────────────────────────────────────────────────────────
+// ── Mode carousel ─────────────────────────────────────────────────
+const GAME_MODES = [
+  { id: 'classic',    icon: '🃏', label: 'Classic',     desc: 'Standard In-Between rules' },
+  { id: 'speed',      icon: '⚡', label: 'Speed',       desc: 'Fast rounds, instant reveals' },
+  { id: 'highstakes', icon: '💎', label: 'High Stakes', desc: 'Double ante, bigger rewards' },
+  { id: 'solo',       icon: '🤖', label: 'Solo Demo',   desc: 'Practice against the computer' },
+];
+let modeIndex = 0;
+
+function updateModeCarousel() {
+  const m = GAME_MODES[modeIndex];
+  selectedMode = m.id;
+  const icon = $('modeIcon'), label = $('modeLabel'), desc = $('modeDesc');
+  if (icon) icon.textContent = m.icon;
+  if (label) label.textContent = m.label;
+  if (desc) desc.textContent = m.desc;
+  document.querySelectorAll('.lob-dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i === modeIndex);
+  });
+}
+
+const modePrev = $('modePrev');
+const modeNext = $('modeNext');
+if (modePrev) modePrev.addEventListener('click', () => {
+  modeIndex = (modeIndex - 1 + GAME_MODES.length) % GAME_MODES.length;
+  updateModeCarousel();
+});
+if (modeNext) modeNext.addEventListener('click', () => {
+  modeIndex = (modeIndex + 1) % GAME_MODES.length;
+  updateModeCarousel();
+});
+
+// Swipe support on the mode plaque
+const modePlaque = document.querySelector('.lob-mode-plaque');
+if (modePlaque) {
+  let _tx = 0;
+  modePlaque.addEventListener('touchstart', e => { _tx = e.touches[0].clientX; }, { passive: true });
+  modePlaque.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - _tx;
+    if (Math.abs(dx) > 36) {
+      modeIndex = dx < 0
+        ? (modeIndex + 1) % GAME_MODES.length
+        : (modeIndex - 1 + GAME_MODES.length) % GAME_MODES.length;
+      updateModeCarousel();
+    }
+  }, { passive: true });
+}
+
+// ── Buy-in +/− buttons ────────────────────────────────────────────
+const buyInDec = $('buyInDec'), buyInInc = $('buyInInc');
+if (buyInDec) buyInDec.addEventListener('click', () => {
+  const el = $('buyInAmount');
+  el.value = Math.max(parseInt(el.min) || 50, parseInt(el.value) - (parseInt(el.step) || 50));
+});
+if (buyInInc) buyInInc.addEventListener('click', () => {
+  const el = $('buyInAmount');
+  el.value = Math.min(parseInt(el.max) || 100000, parseInt(el.value) + (parseInt(el.step) || 50));
+});
+
 $('btnDemo').addEventListener('click', () => {
   myName = $('playerName').value.trim() || 'Player';
   const buyIn = parseInt($('buyInAmount').value, 10) || 200;
@@ -134,7 +194,7 @@ $('btnCreate').addEventListener('click', () => {
   const buyIn = parseInt($('buyInAmount').value, 10) || 200;
   if (buyIn > myChips) { showError('lobbyError', `Not enough chips! Your wallet has ${myChips}.`); return; }
   if (buyIn < 10) { showError('lobbyError', 'Minimum buy-in is 10 chips.'); return; }
-  socket.emit('create_room', { name: myName, buyIn });
+  socket.emit('create_room', { name: myName, buyIn, mode: selectedMode });
 });
 
 $('btnJoin').addEventListener('click', joinRoom);
@@ -318,6 +378,15 @@ function renderGame(state) {
   $('headerRoomCode').textContent = state.id.startsWith('demo_') ? 'DEMO' : state.id;
   $('potAmount').textContent = state.pot;
 
+  const modeBadge = $('headerMode');
+  if (state.mode && state.mode !== 'classic') {
+    const modeLabels = { speed: '⚡ Speed', highstakes: '💎 High Stakes', solo: '🤖 Solo' };
+    modeBadge.textContent = modeLabels[state.mode] || state.mode;
+    modeBadge.classList.remove('hidden');
+  } else {
+    modeBadge.classList.add('hidden');
+  }
+
   // My chips
   const me = state.players.find(p => p.id === mySocketId);
   if (me) {
@@ -352,10 +421,12 @@ function renderPlayers(state) {
     const isMe = p.id === mySocketId;
     const div = document.createElement('div');
     div.className = `player-card${isActive ? ' active' : ''}${isMe ? ' current-user' : ''}`;
+    const streakHtml = (p.streak >= 3) ? `<div class="pc-streak">🔥 ${p.streak}</div>` : '';
     div.innerHTML = `
       <div class="pc-name">${p.id === 'bot' ? t('tag_bot') : isMe ? t('tag_me') : ''}${p.name}</div>
       <div class="pc-chips">💰 ${p.chips}</div>
       <div class="pc-status">${p.ante ? t('tag_anted') : ''}</div>
+      ${streakHtml}
       ${isActive && (state.phase === 'bet' || state.phase === 'deal3' || state.phase === 'result') ? `<div class="pc-turn-tag">${t('tag_turn')}</div>` : ''}
     `;
     list.appendChild(div);
@@ -375,17 +446,19 @@ function renderCards(state) {
 }
 
 function buildCard(card, isThird = false) {
-  const color = (card.suit === '♥' || card.suit === '♦') ? 'red' : 'black';
+  const isRed = card.suit === '♥' || card.suit === '♦';
+  const colorClass = isRed ? 'red' : 'black';
   return `
-    <div class="playing-card ${color}${isThird ? ' third' : ''}">
-      <div class="card-corner top">
-        <span class="card-rank">${card.rank}</span>
-        <span class="card-suit-sm">${card.suit}</span>
+    <div class="playing-card ${colorClass}${isThird ? ' third' : ''}">
+      <div class="card-corner-tl">
+        <span class="card-corner-rank">${card.rank}</span>
+        <span class="card-corner-suit">${card.suit}</span>
       </div>
-      <div class="card-center">${card.suit}</div>
-      <div class="card-corner bottom">
-        <span class="card-rank">${card.rank}</span>
-        <span class="card-suit-sm">${card.suit}</span>
+      <div class="card-main-rank">${card.rank}</div>
+      <div class="card-main-suit">${card.suit}</div>
+      <div class="card-corner-br">
+        <span class="card-corner-rank">${card.rank}</span>
+        <span class="card-corner-suit">${card.suit}</span>
       </div>
     </div>`;
 }
@@ -453,10 +526,18 @@ function renderResult(state) {
   const overlay = $('resultOverlay');
   const rText = $('resultText');
   const rSub = $('resultSub');
+  const rIcon = $('resultIcon');
+  const rAmount = $('resultAmount');
+
+  overlay.classList.remove('result--win', 'result--lose', 'result--replay', 'result--pass');
 
   if (state.phase === 'result' && state.lastResult) {
     const r = state.lastResult;
     overlay.classList.remove('hidden');
+    overlay.classList.add(`result--${r.result}`);
+
+    const icons = { win: '🏆', lose: '💸', replay: '🔄', pass: '↩️' };
+    rIcon.textContent = icons[r.result] || '';
 
     const classes = { win: 'win', lose: 'lose', replay: 'post', pass: 'pass' };
     const isMe = r.playerId === mySocketId;
@@ -465,11 +546,26 @@ function renderResult(state) {
     rText.textContent = t('res_' + r.result + suffix, { name: r.player }) || '';
     rText.className = `result-text ${classes[r.result] || ''}`;
 
+    if (r.result === 'win') {
+      rAmount.textContent = `+${r.bet}`;
+      rAmount.className = 'result-amount gain';
+    } else if (r.result === 'lose') {
+      rAmount.textContent = `-${r.bet}`;
+      rAmount.className = 'result-amount loss';
+    } else {
+      rAmount.textContent = '';
+      rAmount.className = 'result-amount';
+    }
+
     const sub = r.result === 'win' ? t('res_sub_win', { amount: r.bet })
       : r.result === 'replay' ? t('res_sub_replay')
         : r.result === 'lose' ? t('res_sub_lose', { amount: r.bet })
           : t('res_sub_pass');
     rSub.textContent = `${r.player} · ${sub}`;
+
+    if (r.result === 'win' && isMe && r.streak && [3, 5, 10].includes(r.streak)) {
+      showStreakMilestone(r.streak);
+    }
   } else {
     overlay.classList.add('hidden');
   }
@@ -497,19 +593,33 @@ function renderLog(state) {
 
 // ── Render: Game Over ─────────────────────────────────────────────
 function renderGameOver(state) {
-  const winner = state.players[0];
+  const sorted = [...state.players].sort((a, b) => b.chips - a.chips);
+  const winner = sorted[0];
   $('gameoverTitle').textContent = winner ? t('log_player_wins_game', { name: winner.name }) : t('gameover_title');
   $('gameoverSub').textContent = t('gameover_sub');
 
+  const medals = ['🥇', '🥈', '🥉'];
   const scores = $('finalScores');
   scores.innerHTML = '';
-  const sorted = [...state.players].sort((a, b) => b.chips - a.chips);
-  sorted.forEach(p => {
+  sorted.forEach((p, idx) => {
     const div = document.createElement('div');
     div.className = 'final-row';
-    div.innerHTML = `<span class="final-name">${p.name}</span><span class="final-chips">💰 ${p.chips}</span>`;
+    const streakHtml = (p.streak >= 3) ? `<span class="final-streak">🔥 ${p.streak}</span>` : '';
+    div.innerHTML = `
+      <span class="final-medal">${medals[idx] || ''}</span>
+      <span class="final-name">${p.name}</span>
+      ${streakHtml}
+      <span class="final-chips">💰 ${p.chips}</span>`;
     scores.appendChild(div);
   });
+}
+
+function showStreakMilestone(n) {
+  const overlay = $('streakMilestoneOverlay');
+  if (!overlay) return;
+  $('streakMilestoneCount').textContent = n;
+  overlay.classList.remove('hidden');
+  setTimeout(() => overlay.classList.add('hidden'), 2500);
 }
 
 function resetUI() {
@@ -525,3 +635,133 @@ function resetUI() {
   $('potAmount').textContent = '0';
   requestUserProfile();
 }
+
+// ── Theme Store ───────────────────────────────────────────────────────
+
+let myUnlockedThemes = ['casino', 'midnight'];
+let myActiveTheme = 'casino';
+
+// Apply saved theme immediately on load (before server responds)
+applyTheme(getActiveTheme());
+
+function openStore() {
+  $('storeChipsDisplay').textContent = `💰 ${myChips.toLocaleString()}`;
+  renderThemeGrid();
+  showScreen('store');
+}
+
+function renderThemeGrid() {
+  const grid = $('themeGrid');
+  grid.innerHTML = '';
+
+  Object.values(THEMES).forEach(theme => {
+    const owned = myUnlockedThemes.includes(theme.id);
+    const active = myActiveTheme === theme.id;
+
+    const card = document.createElement('div');
+    card.className = 'theme-card' + (active ? ' is-active' : '');
+    card.dataset.id = theme.id;
+
+    let actionHtml;
+    if (active) {
+      actionHtml = `<button class="theme-action action-active" disabled>✓ Active</button>`;
+    } else if (owned) {
+      actionHtml = `<button class="theme-action action-apply">Apply</button>`;
+    } else {
+      actionHtml = `<button class="theme-action action-buy">💰 ${theme.price.toLocaleString()}</button>`;
+    }
+
+    card.innerHTML = `
+      <div class="theme-preview">
+        <div class="theme-felt-swatch" style="background:${theme.preview.felt}"></div>
+        <div class="theme-accent-dot" style="background:${theme.preview.accent}"></div>
+        <span class="theme-emoji-badge">${theme.emoji}</span>
+      </div>
+      <div class="theme-info">
+        <div class="theme-name">${theme.name}</div>
+        <div class="theme-desc">${theme.description}</div>
+        ${actionHtml}
+      </div>`;
+
+    const btn = card.querySelector('.theme-action');
+    if (active) {
+      // no-op
+    } else if (owned) {
+      btn.addEventListener('click', () => applyAndSaveTheme(theme.id));
+    } else {
+      btn.addEventListener('click', () => buyTheme(theme.id));
+    }
+
+    grid.appendChild(card);
+  });
+}
+
+function applyAndSaveTheme(themeId) {
+  myActiveTheme = themeId;
+  applyTheme(themeId);
+  socket.emit('set_theme', { themeId });
+  renderThemeGrid();
+}
+
+function buyTheme(themeId) {
+  const theme = THEMES[themeId];
+  if (!theme) return;
+  if (myChips < theme.price) {
+    showStoreToast(`Not enough chips! Need ${theme.price.toLocaleString()}.`);
+    return;
+  }
+  socket.emit('purchase_theme', { themeId });
+}
+
+function showStoreToast(msg) {
+  let toast = document.querySelector('.store-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.className = 'store-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.classList.add('visible');
+  setTimeout(() => toast.classList.remove('visible'), 2800);
+}
+
+// ── Store socket events ───────────────────────────────────────────────
+
+socket.on('theme_set', ({ themeId }) => {
+  myActiveTheme = themeId;
+});
+
+socket.on('theme_purchased', ({ themeId, chips, unlockedThemes }) => {
+  myChips = chips;
+  myUnlockedThemes = unlockedThemes;
+  myActiveTheme = themeId;
+  applyTheme(themeId);
+  $('storeChipsDisplay').textContent = `💰 ${chips.toLocaleString()}`;
+  $('lobbyChips').textContent = `💰 ${chips.toLocaleString()}`;
+  renderThemeGrid();
+  showStoreToast(`${THEMES[themeId]?.emoji || '🎨'} ${THEMES[themeId]?.name || themeId} unlocked!`);
+});
+
+// ── Store button wiring ───────────────────────────────────────────────
+
+$('btnOpenStore').addEventListener('click', openStore);
+$('btnStoreBack').addEventListener('click', () => showScreen('lobby'));
+
+// ── Update profile_loaded to include theme data ───────────────────────
+
+// Patch: override the profile_loaded handler defined earlier to also load theme
+const _origProfileLoaded = socket.listeners('profile_loaded')[0];
+socket.off('profile_loaded', _origProfileLoaded);
+socket.on('profile_loaded', ({ user }) => {
+  myChips = user.chips;
+  $('lobbyChips').textContent = `💰 ${user.chips.toLocaleString()}`;
+  $('lobbyStats').textContent = `🏆 ${user.wins} W / ${user.losses} L`;
+
+  if (user.theme) {
+    myActiveTheme = user.theme;
+    applyTheme(user.theme);
+  }
+  if (user.unlocked_themes) {
+    try { myUnlockedThemes = JSON.parse(user.unlocked_themes); } catch (_) {}
+  }
+});

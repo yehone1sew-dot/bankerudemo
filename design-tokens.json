@@ -1,0 +1,149 @@
+{
+  "color": {
+    "bg": {
+      "0": "#07090f",
+      "1": "#0a0e1a",
+      "2": "#111827",
+      "surface": "rgba(255,255,255,0.05)",
+      "surface-raised": "rgba(255,255,255,0.08)",
+      "overlay": "rgba(0,0,0,0.75)"
+    },
+    "gold": {
+      "300": "#fde68a",
+      "400": "#f5c842",
+      "500": "#e6a817",
+      "600": "#b07b0d"
+    },
+    "win": {
+      "base": "#22c55e",
+      "dim": "rgba(34,197,94,0.12)",
+      "glow": "rgba(34,197,94,0.45)"
+    },
+    "lose": {
+      "base": "#ef4444",
+      "dim": "rgba(239,68,68,0.12)",
+      "glow": "rgba(239,68,68,0.45)"
+    },
+    "replay": {
+      "base": "#f97316",
+      "dim": "rgba(249,115,22,0.12)",
+      "glow": "rgba(249,115,22,0.45)"
+    },
+    "streak": {
+      "low": "#fb923c",
+      "mid": "#f97316",
+      "high": "#ef4444",
+      "legendary": "#dc2626"
+    },
+    "rank": {
+      "gold": "#f5c842",
+      "silver": "#94a3b8",
+      "bronze": "#cd7c3a"
+    },
+    "mode": {
+      "classic": "#3b82f6",
+      "speed": "#f97316",
+      "highstakes": "#a855f7",
+      "tournament": "#ef4444",
+      "solo": "#22c55e"
+    },
+    "text": {
+      "primary": "#f1f5f9",
+      "secondary": "#94a3b8",
+      "muted": "#475569",
+      "inverse": "#0a0e1a"
+    },
+    "border": {
+      "default": "rgba(255,255,255,0.10)",
+      "strong": "rgba(255,255,255,0.18)",
+      "gold": "rgba(245,200,66,0.35)"
+    },
+    "felt": {
+      "base": "#0d4f2e",
+      "dark": "#0a3d22",
+      "rim": "#082a17"
+    }
+  },
+  "typography": {
+    "font": {
+      "display": "'Outfit', sans-serif",
+      "body": "'Outfit', sans-serif"
+    },
+    "size": {
+      "xs": "11px",
+      "sm": "13px",
+      "base": "15px",
+      "md": "17px",
+      "lg": "20px",
+      "xl": "24px",
+      "2xl": "32px",
+      "3xl": "clamp(40px, 8vw, 64px)",
+      "display": "clamp(56px, 14vw, 96px)"
+    },
+    "weight": {
+      "normal": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700,
+      "black": 900
+    },
+    "tracking": {
+      "tight": "-0.02em",
+      "normal": "0",
+      "wide": "0.06em",
+      "wider": "0.12em",
+      "widest": "0.2em"
+    }
+  },
+  "spacing": {
+    "1": "4px",
+    "2": "8px",
+    "3": "12px",
+    "4": "16px",
+    "5": "20px",
+    "6": "24px",
+    "8": "32px",
+    "10": "40px",
+    "12": "48px",
+    "16": "64px"
+  },
+  "radius": {
+    "sm": "8px",
+    "md": "12px",
+    "lg": "16px",
+    "xl": "24px",
+    "full": "9999px"
+  },
+  "shadow": {
+    "card": "0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)",
+    "glow-gold": "0 0 40px rgba(245,200,66,0.45)",
+    "glow-win": "0 0 40px rgba(34,197,94,0.50)",
+    "glow-lose": "0 0 40px rgba(239,68,68,0.50)",
+    "glow-replay": "0 0 40px rgba(249,115,22,0.50)",
+    "glow-streak": "0 0 60px rgba(239,68,68,0.60), 0 0 120px rgba(245,158,11,0.30)"
+  },
+  "animation": {
+    "duration": {
+      "fast": "150ms",
+      "normal": "300ms",
+      "slow": "500ms",
+      "dramatic": "700ms"
+    },
+    "easing": {
+      "out": "cubic-bezier(0.16,1,0.3,1)",
+      "bounce": "cubic-bezier(0.34,1.56,0.64,1)",
+      "spring": "cubic-bezier(0.43,0.195,0.020,1.0)"
+    }
+  },
+  "card": {
+    "w": "80px",
+    "h": "112px",
+    "w-sm": "64px",
+    "h-sm": "92px"
+  },
+  "breakpoint": {
+    "sm": "520px",
+    "md": "768px",
+    "lg": "1024px"
+  }
+}

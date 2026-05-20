@@ -20,9 +20,14 @@ function initializeTables() {
         username TEXT UNIQUE,
         chips INTEGER DEFAULT ${config.DEFAULT_CHIPS},
         wins INTEGER DEFAULT 0,
-        losses INTEGER DEFAULT 0
+        losses INTEGER DEFAULT 0,
+        theme TEXT DEFAULT '${config.DEFAULT_THEME}',
+        unlocked_themes TEXT DEFAULT '["casino","midnight"]'
       )
     `);
+    // Migrate existing databases that predate the theme columns
+    db.run(`ALTER TABLE users ADD COLUMN theme TEXT DEFAULT '${config.DEFAULT_THEME}'`, () => {});
+    db.run(`ALTER TABLE users ADD COLUMN unlocked_themes TEXT DEFAULT '["casino","midnight"]'`, () => {});
     db.run(`
       CREATE TABLE IF NOT EXISTS platform_wallet (
         id INTEGER PRIMARY KEY CHECK (id = 1),

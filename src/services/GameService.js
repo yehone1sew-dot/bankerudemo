@@ -29,13 +29,13 @@ class GameService {
 
   // ── Create Room ───────────────────────────────────────────────────────
 
-  async createRoom(socketId, telegramId, name, buyIn, anteAmount) {
+  async createRoom(socketId, telegramId, name, buyIn, anteAmount, mode) {
     const dbUser = await userRepo.getOrCreate(telegramId, name);
     const buyInAmt = this._clampBuyIn(parseInt(buyIn, 10) || 200, dbUser.chips);
     await userRepo.deductChips(dbUser.id, buyInAmt);
 
     const roomId = roomMgr.generateRoomId();
-    const room = roomMgr.createRoom(roomId);
+    const room = roomMgr.createRoom(roomId, mode || 'classic');
     room.anteAmount = anteAmount || config.DEFAULT_ANTE;
     room.initialAnteAmount = anteAmount || config.DEFAULT_ANTE;
     room.players.push(roomMgr.createPlayer(socketId, dbUser.username, buyInAmt, dbUser.id));
@@ -82,7 +82,7 @@ class GameService {
     await userRepo.deductChips(dbUser.id, buyInAmt);
 
     const roomId = 'demo_' + socketId;
-    const room = roomMgr.createRoom(roomId);
+    const room = roomMgr.createRoom(roomId, 'solo');
     room.anteAmount = config.DEFAULT_ANTE;
     room.initialAnteAmount = config.DEFAULT_ANTE;
     room.players.push(
@@ -288,13 +288,15 @@ class GameService {
     const bet = room.currentBet;
 
     if (bet === 0) {
-      room.lastResult = { result: 'pass', player: currentPlayer.name, playerId: currentPlayer.id, bet: 0, card: c3 };
+      currentPlayer.streak = 0;
+      room.lastResult = { result: 'pass', player: currentPlayer.name, playerId: currentPlayer.id, bet: 0, card: c3, streak: 0 };
       roomMgr.addMessage(room, { key: 'log_pass_result', name: currentPlayer.name }, 'pass');
     } else if (result === 'win') {
       const platformFee = Math.floor(bet * config.PLATFORM_FEE_RATE);
       const netWin = bet - platformFee;
       currentPlayer.chips += netWin;
       room.pot -= bet;
+      currentPlayer.streak = (currentPlayer.streak || 0) + 1;
 
       if (currentPlayer.dbUserId) {
         try {
@@ -305,14 +307,15 @@ class GameService {
         }
       }
 
-      room.lastResult = { result: 'win', player: currentPlayer.name, playerId: currentPlayer.id, bet: netWin, card: c3 };
+      room.lastResult = { result: 'win', player: currentPlayer.name, playerId: currentPlayer.id, bet: netWin, card: c3, streak: currentPlayer.streak };
       roomMgr.addMessage(room, { key: 'log_win_result', name: currentPlayer.name, amount: netWin, card: c3.rank + c3.suit }, 'win');
     } else if (result === 'replay') {
-      room.lastResult = { result: 'replay', player: currentPlayer.name, playerId: currentPlayer.id, bet, card: c3 };
+      room.lastResult = { result: 'replay', player: currentPlayer.name, playerId: currentPlayer.id, bet, card: c3, streak: currentPlayer.streak || 0 };
       roomMgr.addMessage(room, { key: 'log_replay_result', name: currentPlayer.name, card: c3.rank + c3.suit }, 'post');
     } else {
       currentPlayer.chips -= bet;
       room.pot += bet;
+      currentPlayer.streak = 0;
 
       if (currentPlayer.dbUserId) {
         try {
@@ -322,7 +325,7 @@ class GameService {
         }
       }
 
-      room.lastResult = { result: 'lose', player: currentPlayer.name, playerId: currentPlayer.id, bet, card: c3 };
+      room.lastResult = { result: 'lose', player: currentPlayer.name, playerId: currentPlayer.id, bet, card: c3, streak: 0 };
       roomMgr.addMessage(room, { key: 'log_lose_result', name: currentPlayer.name, amount: bet, card: c3.rank + c3.suit }, 'lose');
     }
 
@@ -393,6 +396,31 @@ class GameService {
     } else {
       this._startRound(room);
       this.emitRoom(room.id);
+    }
+  }
+
+  // ── Theme Store ───────────────────────────────────────────────────────
+
+  async setTheme(userId, themeId) {
+    if (!config.THEMES[themeId]) return { ok: false, error: 'err_invalid_theme' };
+    const user = await userRepo.getById(userId);
+    if (!user) return { ok: false, error: 'err_user_not_found' };
+    const unlocked = JSON.parse(user.unlocked_themes || '["casino","midnight"]');
+    if (!unlocked.includes(themeId)) return { ok: false, error: 'err_theme_not_owned' };
+    await userRepo.setTheme(userId, themeId);
+    return { ok: true, themeId };
+  }
+
+  async purchaseTheme(userId, themeId) {
+    const themeCfg = config.THEMES[themeId];
+    if (!themeCfg) return { ok: false, error: 'err_invalid_theme' };
+    if (themeCfg.price === 0) return { ok: false, error: 'err_theme_already_free' };
+    try {
+      const updatedUser = await userRepo.unlockTheme(userId, themeId, themeCfg.price);
+      return { ok: true, user: updatedUser };
+    } catch (e) {
+      const error = e.message === 'Insufficient chips' ? 'err_not_enough_chips' : 'err_purchase_failed';
+      return { ok: false, error };
     }
   }
 

@@ -93,6 +93,28 @@ module.exports = function registerGameHandlers(io, socket, gameService) {
     gameService.emitRoom(roomId);
   });
 
+  // ── Theme Store ───────────────────────────────────────────────────────
+  socket.on('set_theme', async ({ themeId }) => {
+    const userId = socket.data.dbUser?.id;
+    if (!userId) return socket.emit('error_msg', { key: 'err_not_logged_in' });
+    const result = await gameService.setTheme(userId, themeId);
+    if (!result.ok) return socket.emit('error_msg', { key: result.error });
+    socket.emit('theme_set', { themeId });
+  });
+
+  socket.on('purchase_theme', async ({ themeId }) => {
+    const userId = socket.data.dbUser?.id;
+    if (!userId) return socket.emit('error_msg', { key: 'err_not_logged_in' });
+    const result = await gameService.purchaseTheme(userId, themeId);
+    if (!result.ok) return socket.emit('error_msg', { key: result.error });
+    socket.data.dbUser = result.user;
+    socket.emit('theme_purchased', {
+      themeId,
+      chips: result.user.chips,
+      unlockedThemes: JSON.parse(result.user.unlocked_themes || '["casino","midnight"]'),
+    });
+  });
+
   // ── Leave / Disconnect ────────────────────────────────────────────────
   async function handleLeave() {
     const roomId = socket.data.roomId;

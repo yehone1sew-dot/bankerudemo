@@ -5,9 +5,10 @@ function generateRoomId() {
   return Math.random().toString(36).substring(2, 7).toUpperCase();
 }
 
-function createRoom(roomId) {
+function createRoom(roomId, mode = 'classic') {
   return {
     id: roomId,
+    mode,
     players: [],
     host: null,
     deck: makeDeck(),
@@ -25,7 +26,7 @@ function createRoom(roomId) {
 }
 
 function createPlayer(socketId, name, chips, dbUserId = null) {
-  return { id: socketId, name, chips, ante: false, bet: 0, isReady: false, dbUserId };
+  return { id: socketId, name, chips, ante: false, bet: 0, isReady: false, dbUserId, streak: 0 };
 }
 
 function addMessage(room, msgData, type = 'info') {
@@ -41,7 +42,8 @@ function addMessage(room, msgData, type = 'info') {
 function sanitizeRoom(room) {
   return {
     id: room.id,
-    players: room.players.map(p => ({ id: p.id, name: p.name, chips: p.chips, ante: p.ante })),
+    mode: room.mode || 'classic',
+    players: room.players.map(p => ({ id: p.id, name: p.name, chips: p.chips, ante: p.ante, streak: p.streak || 0 })),
     pot: room.pot,
     anteAmount: room.anteAmount,
     currentPlayerIndex: room.currentPlayerIndex,

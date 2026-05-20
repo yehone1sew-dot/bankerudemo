@@ -13,81 +13,135 @@
   <link rel="stylesheet" href="style.css" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="locales.js"></script>
+  <script src="themes.js"></script>
 </head>
 
 <body>
 
   <!-- ══════════════════════════════════════════════════════════════════
-     LOBBY SCREEN
+     LOBBY SCREEN — Mobile-first redesign
 ══════════════════════════════════════════════════════════════════ -->
   <div id="lobby" class="screen active">
-    <div class="lang-switcher">
-      <select id="langSelect">
-        <option value="en">English</option>
-        <option value="am">አማርኛ</option>
+
+    <!-- Animated background suit symbols -->
+    <div class="lob-bg" aria-hidden="true">
+      <span class="lob-bg-suit s1">♠</span>
+      <span class="lob-bg-suit s2">♥</span>
+      <span class="lob-bg-suit s3">♦</span>
+      <span class="lob-bg-suit s4">♣</span>
+      <span class="lob-bg-suit s5">♠</span>
+      <span class="lob-bg-suit s6">♥</span>
+    </div>
+
+    <!-- ── Top Bar ── -->
+    <header class="lob-topbar">
+      <div class="lob-profile">
+        <div class="lob-avatar" aria-hidden="true">🃏</div>
+        <div class="lob-profile-info">
+          <input id="playerName" class="lob-name-input" type="text"
+            maxlength="16" placeholder="Your Name…" autocomplete="off" />
+          <div class="lob-chips-row">
+            <span id="lobbyChips" class="lob-chips">💰 1,000</span>
+            <span id="lobbyStats" class="lob-stats">🏆 0W / 0L</span>
+          </div>
+        </div>
+      </div>
+      <button id="btnOpenStore" class="lob-shop-btn" title="Theme Store">
+        <span class="lob-shop-label">SHOP</span>
+        <span>🛒</span>
+      </button>
+    </header>
+
+    <!-- ── Hero / Title ── -->
+    <div class="lob-hero">
+      <div class="lob-fan-cards" aria-hidden="true">
+        <div class="lob-fan lob-fan-l">
+          <span class="fan-rank red">K</span>
+          <span class="fan-suit red">♥</span>
+        </div>
+        <div class="lob-fan lob-fan-c">
+          <span class="fan-rank">A</span>
+          <span class="fan-suit">♠</span>
+        </div>
+        <div class="lob-fan lob-fan-r">
+          <span class="fan-rank red">Q</span>
+          <span class="fan-suit red">♦</span>
+        </div>
+      </div>
+      <h1 class="lob-title" data-i18n="lobby_title">ባንከሩ</h1>
+      <p class="lob-tagline" data-i18n="lobby_tagline">ፈታ ብለው ብሮትን ይቁጠሩ!</p>
+    </div>
+
+    <!-- ── Mode Carousel ── -->
+    <div class="lob-mode-section">
+      <div class="lob-mode-row">
+        <button class="lob-mode-arrow" id="modePrev" aria-label="Previous mode">‹</button>
+        <div class="lob-mode-plaque">
+          <div class="lob-mode-icon" id="modeIcon">🃏</div>
+          <div class="lob-mode-name" id="modeLabel">Classic</div>
+          <div class="lob-mode-desc" id="modeDesc">Standard In-Between rules</div>
+        </div>
+        <button class="lob-mode-arrow" id="modeNext" aria-label="Next mode">›</button>
+      </div>
+      <div class="lob-dots" id="modeDots">
+        <span class="lob-dot active"></span>
+        <span class="lob-dot"></span>
+        <span class="lob-dot"></span>
+        <span class="lob-dot"></span>
+      </div>
+    </div>
+
+    <!-- Hidden original mode selector for JS compatibility -->
+    <div id="modeSelector" class="hidden">
+      <button class="mode-btn active" data-mode="classic">Classic</button>
+      <button class="mode-btn" data-mode="speed">Speed</button>
+      <button class="mode-btn" data-mode="highstakes">High Stakes</button>
+      <button class="mode-btn" data-mode="solo">Solo</button>
+    </div>
+
+    <!-- ── Buy-in ── -->
+    <div class="lob-buyin">
+      <button class="lob-buyin-adj" id="buyInDec" aria-label="Decrease buy-in">−</button>
+      <div class="lob-buyin-center">
+        <span class="lob-buyin-label" data-i18n="buy_in_label">BUY-IN</span>
+        <input id="buyInAmount" type="number" value="200" min="50" max="100000" step="50"
+          class="lob-buyin-input" inputmode="numeric" />
+      </div>
+      <button class="lob-buyin-adj" id="buyInInc" aria-label="Increase buy-in">+</button>
+    </div>
+
+    <!-- ── Actions ── -->
+    <div class="lob-actions">
+      <button id="btnCreate" class="lob-btn-create">
+        <span>🏠</span>
+        <span data-i18n="btn_create">Create Room</span>
+      </button>
+
+      <div class="lob-join-row">
+        <input id="joinCode" type="text" placeholder="Room code…"
+          maxlength="55" class="lob-join-input" autocapitalize="characters" />
+        <button id="btnJoin" class="lob-join-go">
+          <span data-i18n="btn_join">JOIN</span>
+        </button>
+      </div>
+
+      <button id="btnDemo" class="lob-btn-demo">
+        <span>🤖</span>
+        <span data-i18n="btn_demo">Solo Demo</span>
+      </button>
+    </div>
+
+    <div id="lobbyError" class="error-msg hidden lob-error"></div>
+
+    <!-- ── Bottom Bar ── -->
+    <footer class="lob-footer">
+      <select id="langSelect" class="lob-lang-select">
+        <option value="en">🌐 EN</option>
+        <option value="am">አማ</option>
       </select>
-    </div>
-    <div class="lobby-bg">
-      <div class="bg-card c1">♠</div>
-      <div class="bg-card c2">♥</div>
-      <div class="bg-card c3">♦</div>
-      <div class="bg-card c4">♣</div>
-    </div>
+      <p class="lob-hint" data-i18n="rules_hint">2 cards → bet if 3rd lands between!</p>
+    </footer>
 
-    <div class="lobby-content">
-      <div class="logo">
-        <div class="logo-icon">🃏</div>
-        <h1 data-i18n="lobby_title">ባንከሩ</h1>
-        <p class="tagline" data-i18n="lobby_tagline">ፈታ ብለው ብሮትን ይቁጠሩ !</p>
-      </div>
-
-      <div class="lobby-card glass">
-        <div class="name-row">
-          <label for="playerName" data-i18n="name_label">ስም</label>
-          <input id="playerName" type="text" data-i18n-placeholder="name_placeholder" placeholder="Enter your name…"
-            maxlength="16" autocomplete="off" />
-        </div>
-        <div class="wallet-row glass">
-          <div class="wallet-col">
-            <span class="wallet-label" data-i18n="wallet_chips_label">Your Wallet</span>
-            <span id="lobbyChips" class="wallet-value">💰 1,000</span>
-          </div>
-          <div class="wallet-col stats-col">
-            <span class="wallet-label" data-i18n="wallet_stats_label">Record</span>
-            <span id="lobbyStats" class="wallet-value stats-value">🏆 0 W / 0 L</span>
-          </div>
-        </div>
-        <div class="name-row buy-in-row">
-          <label for="buyInAmount" data-i18n="buy_in_label">Game Buy-in</label>
-          <input id="buyInAmount" type="number" value="200" min="50" max="100000" step="50" />
-        </div>
-        <button id="btnDemo" class="btn btn-demo">
-          <span class="btn-icon">🤖</span>
-          <span data-i18n="btn_demo">የሙከራ ጨዋታ</span>
-        </button>
-
-        <div class="divider" data-i18n="divider">ከሌሎች ሰዎች ጋር ይጫወቱ</div>
-
-        <button id="btnCreate" class="btn btn-create">
-          <span class="btn-icon">🏠</span>
-          <span data-i18n="btn_create">አዲስ የጨዋታ ቦታ ፍጠር</span>
-        </button>
-
-        <div class="join-row">
-          <input id="joinCode" type="text" data-i18n-placeholder="join_code_placeholder" placeholder="የመጫወቻ ቦታ ኮድ"
-            maxlength="55" class="join-input" />
-          <button id="btnJoin" class="btn btn-join">
-            <span data-i18n="btn_join">ነባር ጨዋታ ተቀላቀል</span>
-          </button>
-        </div>
-
-        <div id="lobbyError" class="error-msg hidden"></div>
-      </div>
-
-      <p class="rules-hint" data-i18n="rules_hint">
-        የመጀመሪያዎቹን ሁለት ካርታዎች ይመልከቱ → ሦስተኛዋ ካርታ በመካከላቸው ከሆነች ያሸንፋሉ！
-      </p>
-    </div>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════════════
@@ -125,6 +179,7 @@
       <div class="header-left">
         <span class="header-logo">🃏 <span data-i18n="lobby_title">ባንከሩ</span></span>
         <span id="headerRoomCode" class="room-badge"></span>
+        <span id="headerMode" class="mode-badge hidden"></span>
       </div>
       <div class="pot-display">
         <span class="pot-label" data-i18n="pot_label">ካዝና</span>
@@ -171,7 +226,9 @@
 
           <!-- Result overlay -->
           <div id="resultOverlay" class="result-overlay hidden">
+            <div id="resultIcon" class="result-icon"></div>
             <div id="resultText" class="result-text"></div>
+            <div id="resultAmount" class="result-amount"></div>
             <div id="resultSub" class="result-sub"></div>
           </div>
         </div>
@@ -237,6 +294,30 @@
       <button id="btnBackLobby" class="btn btn-outline" style="margin-top:10px;" data-i18n="btn_back_lobby">
         🏠 ወደ መጀመሪያው ይመለሱ
       </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+     THEME STORE SCREEN
+══════════════════════════════════════════════════════════════════ -->
+  <div id="store" class="screen store-screen">
+    <div class="store-header">
+      <button id="btnStoreBack" class="btn-back">← Back</button>
+      <h2 class="store-title">🎨 Theme Store</h2>
+      <span id="storeChipsDisplay" class="store-chips">💰 0</span>
+    </div>
+    <div class="store-body">
+      <p class="store-sub">Personalise your table. Owned themes are yours forever.</p>
+      <div id="themeGrid" class="theme-grid"></div>
+    </div>
+  </div>
+
+  <!-- Streak Milestone Overlay -->
+  <div id="streakMilestoneOverlay" class="streak-milestone-overlay hidden">
+    <div class="streak-milestone-inner">
+      <div class="streak-fire">🔥</div>
+      <div class="streak-count" id="streakMilestoneCount">3</div>
+      <div class="streak-label">WIN STREAK!</div>
     </div>
   </div>
 
