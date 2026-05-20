@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const dbService = require('./db');
 
 const app = express();
 
@@ -62,8 +63,8 @@ function createRoom(roomId, hostName) {
   };
 }
 
-function createPlayer(socketId, name, chips) {
-  return { id: socketId, name, chips, ante: false, bet: 0, isReady: false };
+function createPlayer(socketId, name, chips, dbUserId = null) {
+  return { id: socketId, name, chips, ante: false, bet: 0, isReady: false, dbUserId };
 }
 
 function dealCard(room) {
@@ -139,37 +140,120 @@ function botDecide(room) {
 io.on('connection', (socket) => {
   console.log('connected:', socket.id);
 
+  // ── Get / Create Profile ──
+  socket.on('get_profile', async ({ telegramId, username }) => {
+    try {
+      const user = await dbService.getOrCreateUser(telegramId, username);
+      socket.data.dbUser = user;
+      const platformBalance = await dbService.getPlatformBalance();
+      socket.emit('profile_loaded', { user, platformBalance });
+    } catch (e) {
+      console.error('Error fetching profile:', e);
+      socket.emit('error_msg', { key: 'Failed to load profile. Please reconnect.' });
+    }
+  });
+
+  // Helper to ensure socket has a valid database user loaded
+  const ensureDbUser = async (name) => {
+    const user = await dbService.getOrCreateUser(socket.data.dbUser?.telegram_id || null, name || 'Player');
+    socket.data.dbUser = user;
+    return user;
+  };
+
+  const leaveRoom = async (socket) => {
+    const roomId = socket.data.roomId;
+    if (!roomId || !rooms[roomId]) return;
+    const room = rooms[roomId];
+
+    // Find player and refund remaining table chips to DB
+    const player = room.players.find(p => p.id === socket.id);
+    if (player && player.dbUserId && player.chips > 0) {
+      try {
+        await dbService.refundChips(player.dbUserId, player.chips);
+      } catch (e) {
+        console.error('Failed to refund chips on leaving room:', e);
+      }
+    }
+
+    // Remove player
+    room.players = room.players.filter(p => p.id !== socket.id);
+    socket.leave(roomId);
+    delete socket.data.roomId;
+
+    if (room.players.length === 0) {
+      delete rooms[roomId];
+    } else {
+      if (room.host === socket.id) room.host = room.players[0].id;
+      addMessage(room, { key: 'log_player_left' }, 'system');
+      emitRoom(roomId);
+    }
+  };
+
   // ── Create Room ──
-  socket.on('create_room', ({ name, chips, anteAmount }) => {
-    const roomId = Math.random().toString(36).substring(2, 7).toUpperCase();
-    const room = createRoom(roomId, name);
-    room.anteAmount = anteAmount || 10;
-    room.initialAnteAmount = anteAmount || 10;
-    const player = createPlayer(socket.id, name, chips || 100);
-    room.players.push(player);
-    room.host = socket.id;
-    rooms[roomId] = room;
-    socket.join(roomId);
-    socket.data.roomId = roomId;
-    socket.emit('room_created', { roomId });
-    emitRoom(roomId);
+  socket.on('create_room', async ({ name, buyIn, anteAmount }) => {
+    try {
+      const dbUser = await ensureDbUser(name);
+      const buyInAmt = Math.max(10, Math.min(parseInt(buyIn, 10) || 200, dbUser.chips));
+
+      // Deduct buy-in immediately from database
+      await dbService.deductChips(dbUser.id, buyInAmt);
+
+      const roomId = Math.random().toString(36).substring(2, 7).toUpperCase();
+      const room = createRoom(roomId, dbUser.username);
+      room.anteAmount = anteAmount || 10;
+      room.initialAnteAmount = anteAmount || 10;
+
+      const player = createPlayer(socket.id, dbUser.username, buyInAmt, dbUser.id);
+      room.players.push(player);
+      room.host = socket.id;
+      rooms[roomId] = room;
+      socket.join(roomId);
+      socket.data.roomId = roomId;
+      socket.emit('room_created', { roomId });
+      emitRoom(roomId);
+    } catch (e) {
+      console.error(e);
+      socket.emit('error_msg', 'Failed to create room.');
+    }
   });
 
   // ── Join Room ──
-  socket.on('join_room', ({ roomId, name, chips }) => {
-    const room = rooms[roomId];
-    if (!room) { socket.emit('error_msg', { key: 'err_room_not_found' }); return; }
-    if (room.phase !== 'waiting' && room.phase !== 'ante') { socket.emit('error_msg', { key: 'err_game_in_progress' }); return; }
-    if (room.players.length >= 6) { socket.emit('error_msg', { key: 'err_room_full' }); return; }
-    const existing = room.players.find(p => p.id === socket.id);
-    if (!existing) {
-      const player = createPlayer(socket.id, name, chips || 100);
-      room.players.push(player);
+  socket.on('join_room', async ({ roomId, name, buyIn }) => {
+    try {
+      const dbUser = await ensureDbUser(name);
+      const buyInAmt = Math.max(10, Math.min(parseInt(buyIn, 10) || 200, dbUser.chips));
+
+      const room = rooms[roomId];
+      if (!room) { socket.emit('error_msg', { key: 'err_room_not_found' }); return; }
+      if (room.phase !== 'waiting' && room.phase !== 'ante') { socket.emit('error_msg', { key: 'err_game_in_progress' }); return; }
+      if (room.players.length >= 6) { socket.emit('error_msg', { key: 'err_room_full' }); return; }
+
+      const existing = room.players.find(p => p.id === socket.id);
+      if (!existing) {
+        // Deduct buy-in immediately from database
+        await dbService.deductChips(dbUser.id, buyInAmt);
+        const player = createPlayer(socket.id, dbUser.username, buyInAmt, dbUser.id);
+        room.players.push(player);
+      } else {
+        // Adjust chips if they were already in the room
+        const diff = buyInAmt - existing.chips;
+        if (diff > 0) {
+          await dbService.deductChips(dbUser.id, diff);
+        } else if (diff < 0) {
+          await dbService.refundChips(dbUser.id, -diff);
+        }
+        existing.chips = buyInAmt;
+        existing.dbUserId = dbUser.id;
+      }
+
+      socket.join(roomId);
+      socket.data.roomId = roomId;
+      addMessage(room, { key: 'log_player_joined', name: dbUser.username }, 'join');
+      emitRoom(roomId);
+    } catch (e) {
+      console.error(e);
+      socket.emit('error_msg', 'Failed to join room.');
     }
-    socket.join(roomId);
-    socket.data.roomId = roomId;
-    addMessage(room, { key: 'log_player_joined', name }, 'join');
-    emitRoom(roomId);
   });
 
   // ── Start Game (Host) ──
@@ -192,42 +276,56 @@ io.on('connection', (socket) => {
   });
 
   // ── Demo vs Computer ──
-  socket.on('start_demo', ({ name, chips }) => {
-    const roomId = 'demo_' + socket.id;
-    const room = createRoom(roomId, name);
-    room.anteAmount = 10;
-    room.initialAnteAmount = 10;
-    const human = createPlayer(socket.id, name || 'You', chips || 100);
-    const bot = createPlayer('bot', '🤖 Computer', 100);
-    room.players.push(human, bot);
-    room.host = socket.id;
-    rooms[roomId] = room;
-    socket.join(roomId);
-    socket.data.roomId = roomId;
+  socket.on('start_demo', async ({ name, buyIn }) => {
+    try {
+      const dbUser = await ensureDbUser(name);
+      const buyInAmt = Math.max(10, Math.min(parseInt(buyIn, 10) || 200, dbUser.chips));
 
-    const minChips = Math.min(...room.players.map(p => p.chips));
-    room.anteAmount = Math.min(room.initialAnteAmount, minChips);
+      // Deduct buy-in immediately from database
+      await dbService.deductChips(dbUser.id, buyInAmt);
 
-    room.phase = 'ante';
-    room.round = 1;
-    addMessage(room, { key: 'log_demo_mode' }, 'system');
-    emitRoom(roomId);
+      const roomId = 'demo_' + socket.id;
+      const room = createRoom(roomId, dbUser.username);
+      room.anteAmount = 10;
+      room.initialAnteAmount = 10;
 
-    // Bot antes automatically
-    setTimeout(() => autoAnte(room, 'bot', io, roomId), 800);
+      const human = createPlayer(socket.id, dbUser.username, buyInAmt, dbUser.id);
+      const bot = createPlayer('bot', '🤖 Computer', 100, null);
+      room.players.push(human, bot);
+      room.host = socket.id;
+      rooms[roomId] = room;
+      socket.join(roomId);
+      socket.data.roomId = roomId;
+
+      const minChips = Math.min(...room.players.map(p => p.chips));
+      room.anteAmount = Math.min(room.initialAnteAmount, minChips);
+
+      room.phase = 'ante';
+      room.round = 1;
+      addMessage(room, { key: 'log_demo_mode' }, 'system');
+      emitRoom(roomId);
+
+      // Bot antes automatically
+      setTimeout(() => autoAnte(room, 'bot', io, roomId), 800);
+    } catch (e) {
+      console.error(e);
+      socket.emit('error_msg', 'Failed to start demo.');
+    }
   });
 
   // ── Ante ──
-  socket.on('ante', () => {
+  socket.on('ante', async () => {
     const roomId = socket.data.roomId;
     const room = rooms[roomId];
     if (!room || room.phase !== 'ante') return;
     const player = room.players.find(p => p.id === socket.id);
     if (!player || player.ante) return;
     if (player.chips < room.anteAmount) { socket.emit('error_msg', { key: 'err_not_enough_chips_ante' }); return; }
+
     player.chips -= room.anteAmount;
     player.ante = true;
     room.pot += room.anteAmount;
+
     addMessage(room, { key: 'log_player_anted', name: player.name, amount: room.anteAmount }, 'ante');
 
     // Check if everyone has anted
@@ -284,19 +382,14 @@ io.on('connection', (socket) => {
     setTimeout(() => resolveRound(room, roomId), 1200);
   });
 
+  // ── Leave Room ──
+  socket.on('leave_room', () => {
+    leaveRoom(socket);
+  });
+
   // ── Disconnect ──
   socket.on('disconnect', () => {
-    const roomId = socket.data.roomId;
-    if (!roomId || !rooms[roomId]) return;
-    const room = rooms[roomId];
-    room.players = room.players.filter(p => p.id !== socket.id);
-    if (room.players.length === 0) {
-      delete rooms[roomId];
-    } else {
-      if (room.host === socket.id) room.host = room.players[0].id;
-      addMessage(room, { key: 'log_player_left' }, 'system');
-      emitRoom(roomId);
-    }
+    leaveRoom(socket);
   });
 });
 
@@ -308,6 +401,7 @@ function autoAnte(room, playerId, io, roomId) {
   player.chips -= room.anteAmount;
   player.ante = true;
   room.pot += room.anteAmount;
+
   addMessage(room, { key: 'log_player_anted', name: player.name, amount: room.anteAmount }, 'ante');
   const allAnted = room.players.every(p => p.ante);
   if (allAnted) startRound(room);
@@ -323,7 +417,7 @@ function startRound(room) {
   room.tableCards = [c1, c2];
   room.phase = 'bet';
   const currentPlayer = room.players[room.currentPlayerIndex];
-  addMessage(room, { key: 'log_deal_turn', name: currentPlayer.name, c1: c1.rank+c1.suit, c2: c2.rank+c2.suit }, 'deal');
+  addMessage(room, { key: 'log_deal_turn', name: currentPlayer.name, c1: c1.rank + c1.suit, c2: c2.rank + c2.suit }, 'deal');
 
   // If current player is bot, auto-decide
   if (currentPlayer.id === 'bot') {
@@ -343,7 +437,7 @@ function startRound(room) {
   }
 }
 
-function resolveRound(room, roomId) {
+async function resolveRound(room, roomId) {
   const [c1, c2, c3] = room.tableCards;
   const result = evaluateResult(c1, c2, c3);
   const currentPlayer = room.players[room.currentPlayerIndex];
@@ -354,18 +448,44 @@ function resolveRound(room, roomId) {
     room.lastResult = { result: 'pass', player: currentPlayer.name, playerId: currentPlayer.id, bet: 0, card: c3 };
     addMessage(room, { key: 'log_pass_result', name: currentPlayer.name }, 'pass');
   } else if (result === 'win') {
-    currentPlayer.chips += bet;
+    // 5% goes to the platform, 95% goes to the winner
+    const platformFee = Math.floor(bet * 0.05);
+    const netWin = bet - platformFee;
+
+    currentPlayer.chips += netWin;
     room.pot -= bet;
-    room.lastResult = { result: 'win', player: currentPlayer.name, playerId: currentPlayer.id, bet, card: c3 };
-    addMessage(room, { key: 'log_win_result', name: currentPlayer.name, amount: bet, card: c3.rank+c3.suit }, 'win');
+
+    // Persist to DB asynchronously
+    if (currentPlayer.dbUserId) {
+      try {
+        await dbService.recordRoundWinOnly(currentPlayer.dbUserId);
+        await dbService.addPlatformFee(platformFee);
+      } catch (e) {
+        console.error('Error updating DB for win:', e);
+      }
+    }
+
+    room.lastResult = { result: 'win', player: currentPlayer.name, playerId: currentPlayer.id, bet: netWin, card: c3 };
+    addMessage(room, { key: 'log_win_result', name: currentPlayer.name, amount: netWin, card: c3.rank + c3.suit }, 'win');
   } else if (result === 'replay') {
     room.lastResult = { result: 'replay', player: currentPlayer.name, playerId: currentPlayer.id, bet, card: c3 };
-    addMessage(room, { key: 'log_replay_result', name: currentPlayer.name, card: c3.rank+c3.suit }, 'post');
+    addMessage(room, { key: 'log_replay_result', name: currentPlayer.name, card: c3.rank + c3.suit }, 'post');
   } else {
+    // Lose
     currentPlayer.chips -= bet;
     room.pot += bet;
+
+    // Persist to DB asynchronously
+    if (currentPlayer.dbUserId) {
+      try {
+        await dbService.recordRoundLossOnly(currentPlayer.dbUserId);
+      } catch (e) {
+        console.error('Error updating DB for loss:', e);
+      }
+    }
+
     room.lastResult = { result: 'lose', player: currentPlayer.name, playerId: currentPlayer.id, bet, card: c3 };
-    addMessage(room, { key: 'log_lose_result', name: currentPlayer.name, amount: bet, card: c3.rank+c3.suit }, 'lose');
+    addMessage(room, { key: 'log_lose_result', name: currentPlayer.name, amount: bet, card: c3.rank + c3.suit }, 'lose');
   }
 
   room.phase = 'result';
@@ -382,15 +502,32 @@ function resolveRound(room, roomId) {
   }, 3000);
 }
 
-function nextTurn(room, roomId) {
+async function nextTurn(room, roomId) {
   // Remove broke players
   room.players = room.players.filter(p => p.chips > 0);
   if (room.players.length <= 1) {
     room.phase = 'gameover';
     if (room.players.length === 1) {
-      room.players[0].chips += room.pot;
+      const winner = room.players[0];
+      const remainingPot = room.pot;
+      const platformFee = Math.floor(remainingPot * 0.05);
+      const netWin = remainingPot - platformFee;
+
+      winner.chips += netWin;
       room.pot = 0;
-      addMessage(room, { key: 'log_player_wins_game', name: room.players[0].name }, 'win');
+
+      // Persist game win to DB asynchronously
+      if (winner.dbUserId) {
+        try {
+          await dbService.recordRoundWinOnly(winner.dbUserId);
+          await dbService.addPlatformFee(platformFee);
+        } catch (e) {
+          console.error('Error updating DB for game win:', e);
+        }
+      }
+
+      addMessage(room, { key: 'log_player_wins_game', name: winner.name }, 'win');
+      addMessage(room, { key: 'status_win', name: winner.name, amount: netWin }, 'win');
     }
     emitRoom(roomId);
     return;
@@ -408,7 +545,7 @@ function nextTurn(room, roomId) {
     room.players.forEach(p => { p.ante = false; });
     addMessage(room, { key: 'log_new_round', amount: room.anteAmount }, 'system');
     emitRoom(roomId);
-    
+
     // Bot antes automatically in demo
     const bot = room.players.find(p => p.id === 'bot');
     if (bot) setTimeout(() => autoAnte(room, 'bot', io, roomId), 800);
@@ -423,17 +560,17 @@ function nextTurn(room, roomId) {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log('\x1b[32m%s\x1b[0m', `🟢 Bankeru Web Server running at http://localhost:${PORT}`);
-  
+
   // ── Spawn Telegram Bot (if enabled) ──
   const startBot = process.env.START_BOT !== 'false';
   if (startBot) {
     const { spawn } = require('child_process');
-    
+
     const botProcess = spawn('node', ['index.js'], {
       cwd: path.join(__dirname, 'bankeru_tg_bot'),
       env: process.env
     });
-    
+
     const logWithPrefix = (prefix, colorCode, data) => {
       const message = data.toString().trim();
       if (!message) return;
@@ -441,24 +578,24 @@ server.listen(PORT, () => {
         console.log(`${colorCode}${prefix}\x1b[0m ${line}`);
       });
     };
-    
+
     botProcess.stdout.on('data', (data) => {
       logWithPrefix('[Bot]', '\x1b[35m', data); // Magenta
     });
-    
+
     botProcess.stderr.on('data', (data) => {
       logWithPrefix('[Bot Error]', '\x1b[31m', data); // Red
     });
-    
+
     botProcess.on('close', (code) => {
       console.log(`\x1b[33m[Bot] Process exited with code ${code}\x1b[0m`);
     });
-    
+
     // Clean up child process on server termination
     const cleanup = () => {
-      try { botProcess.kill('SIGINT'); } catch (e) {}
+      try { botProcess.kill('SIGINT'); } catch (e) { }
     };
-    
+
     process.on('SIGINT', () => {
       cleanup();
       process.exit(0);

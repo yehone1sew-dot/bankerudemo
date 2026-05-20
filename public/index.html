@@ -47,11 +47,20 @@
           <input id="playerName" type="text" data-i18n-placeholder="name_placeholder" placeholder="Enter your name…"
             maxlength="16" autocomplete="off" />
         </div>
-        <div class="name-row">
-          <label for="startChips" data-i18n="start_chips_label">መነሻ መደብ</label>
-          <input id="startChips" type="number" value="100" min="100" max="10000" step="50" />
+        <div class="wallet-row glass">
+          <div class="wallet-col">
+            <span class="wallet-label" data-i18n="wallet_chips_label">Your Wallet</span>
+            <span id="lobbyChips" class="wallet-value">💰 1,000</span>
+          </div>
+          <div class="wallet-col stats-col">
+            <span class="wallet-label" data-i18n="wallet_stats_label">Record</span>
+            <span id="lobbyStats" class="wallet-value stats-value">🏆 0 W / 0 L</span>
+          </div>
         </div>
-
+        <div class="name-row buy-in-row">
+          <label for="buyInAmount" data-i18n="buy_in_label">Game Buy-in</label>
+          <input id="buyInAmount" type="number" value="200" min="50" max="100000" step="50" />
+        </div>
         <button id="btnDemo" class="btn btn-demo">
           <span class="btn-icon">🤖</span>
           <span data-i18n="btn_demo">የሙከራ ጨዋታ</span>

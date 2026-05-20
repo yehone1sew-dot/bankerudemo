@@ -62,23 +62,55 @@ function applyTranslations() {
   }
 }
 
+let telegramUser = null;
+
+function requestUserProfile() {
+  const name = $('playerName').value.trim() || 'Player';
+  localStorage.setItem('bankeru_username', name);
+  
+  socket.emit('get_profile', {
+    telegramId: telegramUser ? telegramUser.id : null,
+    username: name
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Telegram Mini App Initialization
   if (window.Telegram && window.Telegram.WebApp) {
     try {
       const tg = window.Telegram.WebApp;
       tg.expand();
-      const user = tg.initDataUnsafe?.user;
-      if (user && user.first_name) {
-        const nameInput1 = document.getElementById('joinName');
-        const nameInput2 = document.getElementById('createName');
-        if (nameInput1) nameInput1.value = user.first_name;
-        if (nameInput2) nameInput2.value = user.first_name;
+      telegramUser = tg.initDataUnsafe?.user;
+      if (telegramUser && telegramUser.first_name) {
+        const username = telegramUser.username || telegramUser.first_name;
+        $('playerName').value = username;
+        $('playerName').readOnly = true;
+        $('playerName').style.opacity = '0.7';
       }
     } catch (e) {
       console.error('Telegram WebApp error', e);
     }
   }
+
+  // Local storage fallback for non-telegram browsers
+  if (!telegramUser) {
+    const savedName = localStorage.getItem('bankeru_username');
+    if (savedName) {
+      $('playerName').value = savedName;
+    }
+  }
+
+  // Request profile on load (if connected)
+  if (socket.connected) {
+    requestUserProfile();
+  }
+
+  // Sync profile when playerName input changes
+  $('playerName').addEventListener('change', () => {
+    if (!telegramUser) {
+      requestUserProfile();
+    }
+  });
 
   applyTranslations();
 });
@@ -88,19 +120,21 @@ $('langSelect').addEventListener('change', (e) => {
   applyTranslations();
 });
 
-
-
 // ── Lobby ─────────────────────────────────────────────────────────
 $('btnDemo').addEventListener('click', () => {
   myName = $('playerName').value.trim() || 'Player';
-  myChips = parseInt($('startChips').value) || 100;
-  socket.emit('start_demo', { name: myName, chips: myChips });
+  const buyIn = parseInt($('buyInAmount').value, 10) || 200;
+  if (buyIn > myChips) { showError('lobbyError', `Not enough chips! Your wallet has ${myChips}.`); return; }
+  if (buyIn < 10) { showError('lobbyError', 'Minimum buy-in is 10 chips.'); return; }
+  socket.emit('start_demo', { name: myName, buyIn });
 });
 
 $('btnCreate').addEventListener('click', () => {
   myName = $('playerName').value.trim() || 'Player';
-  myChips = parseInt($('startChips').value) || 100;
-  socket.emit('create_room', { name: myName, chips: myChips });
+  const buyIn = parseInt($('buyInAmount').value, 10) || 200;
+  if (buyIn > myChips) { showError('lobbyError', `Not enough chips! Your wallet has ${myChips}.`); return; }
+  if (buyIn < 10) { showError('lobbyError', 'Minimum buy-in is 10 chips.'); return; }
+  socket.emit('create_room', { name: myName, buyIn });
 });
 
 $('btnJoin').addEventListener('click', joinRoom);
@@ -110,8 +144,10 @@ function joinRoom() {
   const code = $('joinCode').value.trim().toUpperCase();
   if (!code) { showError('lobbyError', 'Enter a room code!'); return; }
   myName = $('playerName').value.trim() || 'Player';
-  myChips = parseInt($('startChips').value) || 100;
-  socket.emit('join_room', { roomId: code, name: myName, chips: myChips });
+  const buyIn = parseInt($('buyInAmount').value, 10) || 200;
+  if (buyIn > myChips) { showError('lobbyError', `Not enough chips! Your wallet has ${myChips}.`); return; }
+  if (buyIn < 10) { showError('lobbyError', 'Minimum buy-in is 10 chips.'); return; }
+  socket.emit('join_room', { roomId: code, name: myName, buyIn });
 }
 
 // ── Waiting Room ──────────────────────────────────────────────────
@@ -123,6 +159,7 @@ $('btnStartGame').addEventListener('click', () => {
 $('btnLeaveWaiting').addEventListener('click', () => {
   socket.emit('leave_room');
   showScreen('lobby');
+  resetUI();
 });
 
 $('btnCopyCode').addEventListener('click', () => {
@@ -205,7 +242,16 @@ $('btnBackLobby').addEventListener('click', () => {
 });
 
 // ── Socket Events ─────────────────────────────────────────────────
-socket.on('connect', () => { mySocketId = socket.id; });
+socket.on('connect', () => { 
+  mySocketId = socket.id; 
+  requestUserProfile();
+});
+
+socket.on('profile_loaded', ({ user }) => {
+  myChips = user.chips;
+  $('lobbyChips').textContent = `💰 ${user.chips.toLocaleString()}`;
+  $('lobbyStats').textContent = `🏆 ${user.wins} W / ${user.losses} L`;
+});
 
 socket.on('room_created', ({ roomId }) => {
   myRoomId = roomId;
@@ -477,4 +523,5 @@ function resetUI() {
   $('card3Slot').innerHTML = '<div class="card-placeholder">?</div>';
   $('resultOverlay').classList.add('hidden');
   $('potAmount').textContent = '0';
+  requestUserProfile();
 }
