@@ -413,23 +413,36 @@ function renderGame(state) {
   renderResult(state);
 }
 
+const AVATAR_COLORS = [
+  ['#C8A84B','#06000F'],
+  ['#8B5CF6','#F5F3FF'],
+  ['#EC4899','#FFF0F7'],
+  ['#10B981','#F0FFF8'],
+  ['#3B82F6','#EFF6FF'],
+  ['#F59E0B','#FFFBEB'],
+];
+
 function renderPlayers(state) {
   const list = $('playersList');
   list.innerHTML = '';
   state.players.forEach((p, i) => {
     const isActive = i === state.currentPlayerIndex;
     const isMe = p.id === mySocketId;
-    const div = document.createElement('div');
-    div.className = `player-card${isActive ? ' active' : ''}${isMe ? ' current-user' : ''}`;
-    const streakHtml = (p.streak >= 3) ? `<div class="pc-streak">🔥 ${p.streak}</div>` : '';
-    div.innerHTML = `
-      <div class="pc-name">${p.id === 'bot' ? t('tag_bot') : isMe ? t('tag_me') : ''}${p.name}</div>
-      <div class="pc-chips">💰 ${p.chips}</div>
-      <div class="pc-status">${p.ante ? t('tag_anted') : ''}</div>
-      ${streakHtml}
-      ${isActive && (state.phase === 'bet' || state.phase === 'deal3' || state.phase === 'result') ? `<div class="pc-turn-tag">${t('tag_turn')}</div>` : ''}
+    const [bg, fg] = AVATAR_COLORS[i % AVATAR_COLORS.length];
+    const initial = (p.name || '?')[0].toUpperCase();
+    const isTurnPhase = state.phase === 'bet' || state.phase === 'deal3' || state.phase === 'result';
+    const chip = document.createElement('div');
+    chip.className = `player-chip${isActive ? ' active' : ''}${isMe ? ' me' : ''}`;
+    chip.innerHTML = `
+      <div class="pchip-ring"></div>
+      <div class="pchip-avatar" style="background:${bg};color:${fg}">${initial}</div>
+      <div class="pchip-name">${isMe ? '★ ' : ''}${p.name}</div>
+      <div class="pchip-balance">💰${p.chips}</div>
+      ${p.ante ? `<div class="pchip-anted">✓</div>` : ''}
+      ${p.streak >= 3 ? `<div class="pchip-streak">🔥${p.streak}</div>` : ''}
+      ${isActive && isTurnPhase ? `<div class="pchip-turn">▶</div>` : ''}
     `;
-    list.appendChild(div);
+    list.appendChild(chip);
   });
 }
 
@@ -450,15 +463,14 @@ function buildCard(card, isThird = false) {
   const colorClass = isRed ? 'red' : 'black';
   return `
     <div class="playing-card ${colorClass}${isThird ? ' third' : ''}">
-      <div class="card-corner-tl">
-        <span class="card-corner-rank">${card.rank}</span>
-        <span class="card-corner-suit">${card.suit}</span>
+      <div class="card-corner tl">
+        <span class="card-rank">${card.rank}</span>
+        <span class="card-suit-sm">${card.suit}</span>
       </div>
-      <div class="card-main-rank">${card.rank}</div>
-      <div class="card-main-suit">${card.suit}</div>
-      <div class="card-corner-br">
-        <span class="card-corner-rank">${card.rank}</span>
-        <span class="card-corner-suit">${card.suit}</span>
+      <div class="card-center-suit">${card.suit}</div>
+      <div class="card-corner br">
+        <span class="card-rank">${card.rank}</span>
+        <span class="card-suit-sm">${card.suit}</span>
       </div>
     </div>`;
 }
@@ -587,7 +599,7 @@ function renderLog(state) {
     log.appendChild(div);
   });
   setTimeout(() => {
-    log.scrollTop = log.scrollHeight;
+    log.scrollLeft = log.scrollWidth;
   }, 10);
 }
 

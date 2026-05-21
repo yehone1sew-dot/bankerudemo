@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="game-v2.css" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="locales.js"></script>
   <script src="themes.js"></script>
@@ -174,109 +175,99 @@
 ══════════════════════════════════════════════════════════════════ -->
   <div id="game" class="screen">
 
-    <!-- Header -->
+    <!-- Compact single-row header -->
     <header class="game-header">
-      <div class="header-left">
-        <span class="header-logo">🃏 <span data-i18n="lobby_title">ባንከሩ</span></span>
+      <div class="gh-left">
+        <button id="btnLeaveGame" class="gh-exit-btn" aria-label="Leave game">✕</button>
         <span id="headerRoomCode" class="room-badge"></span>
         <span id="headerMode" class="mode-badge hidden"></span>
       </div>
-      <div class="pot-display">
-        <span class="pot-label" data-i18n="pot_label">ካዝና</span>
-        <span id="potAmount" class="pot-value">0</span>
+      <div class="gh-pot">
+        <span class="gh-pot-label" data-i18n="pot_label">POT</span>
+        <span id="potAmount" class="gh-pot-value">0</span>
       </div>
-      <div class="header-right">
-        <span id="myChipsDisplay" class="chips-badge">💰 0</span>
-        <button id="btnLeaveGame" class="btn-outline-sm" data-i18n="btn_leave_game">✕ ውጣ</button>
+      <div class="gh-chips">
+        <span class="gh-chips-icon">💰</span>
+        <span id="myChipsDisplay" class="gh-chips-value">0</span>
       </div>
     </header>
 
-    <!-- Main Table -->
-    <main class="table-area">
-      <!-- Players sidebar -->
-      <aside class="players-panel">
-        <h3 class="panel-title" data-i18n="players_panel_title">ተጫዋቾች</h3>
-        <div id="playersList" class="players-list"></div>
-      </aside>
+    <!-- Horizontal player avatar strip -->
+    <div class="players-strip">
+      <div id="playersList" class="players-list"></div>
+    </div>
 
-      <!-- Center game area -->
-      <section class="game-center">
-        <!-- Status banner -->
-        <div id="statusBanner" class="status-banner"></div>
+    <!-- Main game area -->
+    <main class="game-main">
+      <!-- Status banner -->
+      <div id="statusBanner" class="status-banner"></div>
 
-        <!-- Table felt -->
-        <div class="felt-table">
-          <!-- Cards area -->
-          <div class="cards-area">
-            <div id="card1Slot" class="card-slot">
-              <div class="slot-label" data-i18n="label_boundary">Boundary</div>
-              <div class="card-placeholder">?</div>
-            </div>
-            <!-- <div class="vs-badge">በመካከላቸው</div> -->
-            <div id="card3Slot" class="card-slot card3-slot">
-              <div class="slot-label" data-i18n="label_drawn">Drawn Card</div>
-              <div class="card-placeholder">?</div>
-            </div>
-            <!-- <div class="vs-badge">እና</div> -->
-            <div id="card2Slot" class="card-slot">
-              <div class="slot-label" data-i18n="label_boundary">Boundary</div>
-              <div class="card-placeholder">?</div>
-            </div>
+      <!-- Table felt -->
+      <div class="felt-table">
+        <div class="cards-area">
+          <div id="card1Slot" class="card-slot">
+            <div class="slot-label" data-i18n="label_boundary">Boundary</div>
+            <div class="card-placeholder">?</div>
           </div>
-
-          <!-- Result overlay -->
-          <div id="resultOverlay" class="result-overlay hidden">
-            <div id="resultIcon" class="result-icon"></div>
-            <div id="resultText" class="result-text"></div>
-            <div id="resultAmount" class="result-amount"></div>
-            <div id="resultSub" class="result-sub"></div>
+          <div id="card3Slot" class="card-slot card3-slot">
+            <div class="slot-label" data-i18n="label_drawn">Drawn</div>
+            <div class="card-placeholder">?</div>
+          </div>
+          <div id="card2Slot" class="card-slot">
+            <div class="slot-label" data-i18n="label_boundary">Boundary</div>
+            <div class="card-placeholder">?</div>
           </div>
         </div>
 
-        <!-- Controls -->
-        <div id="controls" class="controls-panel">
-          <!-- Ante Phase -->
-          <div id="anteControls" class="control-group hidden">
-            <p class="control-hint" data-i18n="ante_hint">ጨዋታውን ለመቀላቀል ውርርድዎትን ያስገቡ</p>
-            <button id="btnAnte" class="btn btn-ante" data-i18n="btn_ante">
-              💰 ጀምር!
-            </button>
-          </div>
+        <!-- Result overlay -->
+        <div id="resultOverlay" class="result-overlay hidden">
+          <div id="resultIcon" class="result-icon"></div>
+          <div id="resultText" class="result-text"></div>
+          <div id="resultAmount" class="result-amount"></div>
+          <div id="resultSub" class="result-sub"></div>
+        </div>
+      </div>
 
-          <!-- Bet Phase -->
-          <div id="betControls" class="control-group hidden">
-            <p class="control-hint" data-i18n="bet_hint">ውርርድዎን የሚያስገቡበት ጊዜ ነው!</p>
-            <div class="bet-area">
-              <div class="slider-row">
-                <span class="bet-label"><span data-i18n="bet_label">ይወራረዱ: </span><strong
-                    id="betDisplay">0</strong></span>
-                <button id="btnHalfPot" class="chip-btn" data-i18n="btn_half_pot">ግማሽ</button>
-                <button id="btnFullPot" class="chip-btn" data-i18n="btn_full_pot">ሙሉ</button>
-              </div>
+      <!-- Controls -->
+      <div id="controls" class="controls-panel">
+        <!-- Ante Phase -->
+        <div id="anteControls" class="control-group hidden">
+          <p class="control-hint" data-i18n="ante_hint">ጨዋታውን ለመቀላቀል ውርርድዎትን ያስገቡ</p>
+          <button id="btnAnte" class="btn btn-ante" data-i18n="btn_ante">💰 ጀምር!</button>
+        </div>
+
+        <!-- Bet Phase -->
+        <div id="betControls" class="control-group hidden">
+          <div class="bet-area">
+            <div class="bet-quick-chips">
+              <button id="btnHalfPot" class="qchip-btn" data-i18n="btn_half_pot">½ Pot</button>
+              <button id="btnFullPot" class="qchip-btn" data-i18n="btn_full_pot">Full Pot</button>
+            </div>
+            <div class="bet-slider-row">
+              <span class="bet-label"><span data-i18n="bet_label">Bet: </span><strong id="betDisplay">0</strong></span>
               <input id="betSlider" type="range" min="0" max="100" value="0" class="bet-slider" />
-              <div class="bet-buttons">
-                <button id="btnPass" class="btn btn-outline" data-i18n="btn_pass">↩️ ይለፈኝ</button>
-                <button id="btnBet" class="btn btn-bet" data-i18n="btn_bet">🎯 ተጫወት</button>
-              </div>
             </div>
-          </div>
-
-          <!-- Waiting for other player -->
-          <div id="waitingControls" class="control-group">
-            <div class="waiting-indicator">
-              <div class="pulse-dot"></div>
-              <span id="waitingText" data-i18n="waiting_text">ይጠብቁ…</span>
+            <div class="bet-btns">
+              <button id="btnPass" class="btn btn-outline" data-i18n="btn_pass">↩️ Pass</button>
+              <button id="btnBet" class="btn btn-bet" data-i18n="btn_bet">🎯 Bet</button>
             </div>
           </div>
         </div>
-      </section>
 
-      <!-- Chat / Log -->
-      <aside class="log-panel">
-        <h3 class="panel-title" data-i18n="log_panel_title">የጨዋታ መዝገብ</h3>
-        <div id="gameLog" class="game-log"></div>
-      </aside>
+        <!-- Waiting -->
+        <div id="waitingControls" class="control-group">
+          <div class="waiting-indicator">
+            <div class="pulse-dot"></div>
+            <span id="waitingText" data-i18n="waiting_text">ይጠብቁ…</span>
+          </div>
+        </div>
+      </div>
     </main>
+
+    <!-- Scrollable event log strip -->
+    <div class="log-strip">
+      <div id="gameLog" class="game-log"></div>
+    </div>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════════════
